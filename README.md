@@ -60,20 +60,22 @@
 
 ## Estrutura inicial do projeto
 
-billing-importer-go/<br>
-├── cmd/<br>
-│ ├── importer/ # CLI de importação<br>
-│ └── api/ # Servidor HTTP<br>
-├── internal/<br>
-│ ├── api/ # Handlers e rotas<br>
-│ ├── db/ # Conexão e queries<br>
-│ ├── models/ # Structs e DTOs<br>
-│ └── auth/ # JWT e segurança<br>
-├── frontend/ # (opcional) React App<br>
-├── migrations/ # Scripts SQL<br>
-├── docker-compose.yml<br>
-├── Dockerfile<br>
-└── README.md<br>
+data-importer-api-go/
+│── backend/           
+│   ├── cmd/           
+│   ├── internal/      
+│   ├── api/           
+│   ├── db/            
+│   └── go.mod
+│
+│── frontend/          
+│   ├── src/
+│   └── package.json
+│
+│── docs/              
+│── README.md
+│── docker-compose.yml 
+
 
 
 ---
