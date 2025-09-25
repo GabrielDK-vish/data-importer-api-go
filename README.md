@@ -113,15 +113,12 @@ data-importer-api-go/
 │   ├── importer.md          # Guia do importador
 │   ├── migrations.md       # Guia de migrações
 │   └── local_setup.md      # Execução local
-│
-├── scripts/                  # Scripts de automação
-│   ├── run_docker.sh        # Execução Docker (Linux/Mac)
-│   └── run_docker.ps1       # Execução Docker (Windows)
+│                  
+├── run_docker.sh        # Execução Docker (Linux/Mac)
+├── run_docker.ps1       # Execução Docker (Windows)
 │
 ├── docker-compose.yml       # Orquestração de containers
 ├── README.md                # Documentação principal
-├── QUICK_START.md           # Guia rápido
-├── UPLOAD_FEATURES.md       # Funcionalidades de upload
 └── Reconfile fornecedores.xlsx     # Dados de exemplo
 ```
 
