@@ -164,10 +164,17 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 
 	// Verificar colunas obrigatórias
 	requiredColumns := []string{"partner_id", "customer_id", "product_id", "usage_date", "quantity", "unit_price"}
+	missingColumns := []string{}
 	for _, col := range requiredColumns {
 		if _, exists := columnMap[col]; !exists {
-			return nil, nil, nil, nil, fmt.Errorf("coluna obrigatória não encontrada: %s", col)
+			missingColumns = append(missingColumns, col)
 		}
+	}
+	
+	if len(missingColumns) > 0 {
+		log.Printf("⚠️  Colunas obrigatórias não encontradas: %v", missingColumns)
+		log.Printf("📋 Colunas disponíveis: %v", getAvailableColumns(header))
+		return nil, nil, nil, nil, fmt.Errorf("colunas obrigatórias não encontradas: %v. Colunas disponíveis: %v", missingColumns, getAvailableColumns(header))
 	}
 
 	var partners []models.Partner
@@ -227,6 +234,14 @@ func (h *UploadHandler) allEmpty(record []string) bool {
 		}
 	}
 	return true
+}
+
+func getAvailableColumns(header []string) []string {
+	columns := make([]string, len(header))
+	for i, col := range header {
+		columns[i] = strings.ToLower(strings.TrimSpace(col))
+	}
+	return columns
 }
 
 func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowNum int) (*models.Partner, *models.Customer, *models.Product, *models.Usage, error) {

@@ -53,8 +53,23 @@ function Upload() {
         fileInput.value = '';
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Erro ao fazer upload do arquivo');
       console.error('Erro no upload:', err);
+      
+      let errorMessage = 'Erro ao fazer upload do arquivo';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.status === 413) {
+        errorMessage = 'Arquivo muito grande. Tente um arquivo menor.';
+      } else if (err.response?.status === 400) {
+        errorMessage = 'Formato de arquivo inválido ou dados incorretos.';
+      } else if (err.response?.status === 500) {
+        errorMessage = 'Erro interno do servidor. Tente novamente.';
+      } else if (err.code === 'NETWORK_ERROR') {
+        errorMessage = 'Erro de conexão. Verifique sua internet.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -181,6 +196,27 @@ function Upload() {
           <li>Para Excel, datas em formato serial são convertidas automaticamente</li>
           <li>Arquivos grandes são processados em lotes para melhor performance</li>
         </ul>
+      </div>
+
+      <div className="card">
+        <h2>📄 Exemplo de Estrutura</h2>
+        <p>Seu arquivo deve ter pelo menos estas colunas na primeira linha:</p>
+        <div style={{ 
+          backgroundColor: '#f8f9fa', 
+          padding: '15px', 
+          borderRadius: '4px', 
+          fontFamily: 'monospace',
+          fontSize: '14px',
+          overflow: 'auto'
+        }}>
+          <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>Cabeçalhos obrigatórios:</div>
+          <div>partner_id, customer_id, product_id, usage_date, quantity, unit_price</div>
+          <div style={{ marginTop: '10px', fontWeight: 'bold' }}>Exemplo de linha de dados:</div>
+          <div>P001, C001, PRD001, 2024-01-15, 10.5, 25.50</div>
+        </div>
+        <p style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
+          <strong>Nota:</strong> O arquivo "Reconfile fornecedores.xlsx" na raiz do projeto pode ser usado como exemplo.
+        </p>
       </div>
     </div>
   );
