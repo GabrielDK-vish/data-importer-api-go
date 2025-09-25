@@ -1,13 +1,50 @@
 version: '3.8'
+
 services:
-  db:
+  postgres:
     image: postgres:15
     restart: always
     environment:
+      POSTGRES_DB: data_importer
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: billing
+      POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     volumes:
-      - ./backend/db/data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://postgres:password@postgres:5432/data_importer?sslmode=disable
+      JWT_SECRET: sua-chave-secreta-super-segura-aqui
+      PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    working_dir: /app
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    working_dir: /app
+
+volumes:
+  postgres_data:

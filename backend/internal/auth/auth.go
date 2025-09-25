@@ -1,25 +1,71 @@
 package auth
+
 import (
+	"errors"
 	"time"
-	"net/http"
-	"github.com/go-chi/jwtauth/v5"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
-var TokenAuth *jwtauth.JWTAuth
+var jwtSecret = []byte("sua-chave-secreta-super-segura-aqui") // Em produção, use uma chave mais segura
 
-func InitJWT(secret string) {
-	TokenAuth = jwtauth.New("HS256", []byte(secret), nil)
+// Claims representa as claims do JWT
+type Claims struct {
+	Username string `json:"username"`
+	jwt.RegisteredClaims
 }
 
-func GenerateToken(userId int) (string, error) {
-	_, tokenString, err := TokenAuth.Encode(map[string]interface{}{
-		"user_id": userId,
-		"exp":     time.Now().Add(time.Hour * 72).Unix(),
+// GenerateToken gera um token JWT para o usuário
+func GenerateToken(username string) (string, error) {
+	expirationTime := time.Now().Add(24 * time.Hour) // Token válido por 24 horas
+	
+	claims := &Claims{
+		Username: username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+// ValidateToken valida um token JWT
+func ValidateToken(tokenString string) (*Claims, error) {
+	claims := &Claims{}
+	
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
 	})
-	return tokenString, err
+	
+	if err != nil {
+		return nil, err
+	}
+	
+	if !token.Valid {
+		return nil, errors.New("token inválido")
+	}
+	
+	return claims, nil
 }
 
-// Boas práticas para proteger rota
-func VerifyToken(next http.Handler) http.Handler {
-	return jwtauth.Verifier(TokenAuth)(jwtauth.Authenticator(next))
+// ValidateCredentials valida credenciais de login (hardcoded para demo)
+func ValidateCredentials(username, password string) bool {
+	// Para demo, vamos usar credenciais hardcoded
+	// Em produção, isso deveria consultar um banco de dados
+	validUsers := map[string]string{
+		"admin": "admin123",
+		"user":  "user123",
+		"demo":  "demo123",
+	}
+	
+	expectedPassword, exists := validUsers[username]
+	return exists && expectedPassword == password
 }
