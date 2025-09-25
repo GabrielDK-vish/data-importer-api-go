@@ -16,18 +16,33 @@ function Reports() {
   const loadReports = async () => {
     try {
       setLoading(true);
+      setError('');
       
       const [monthlyRes, productRes, partnerRes] = await Promise.all([
-        api.get('/api/reports/billing/monthly'),
-        api.get('/api/reports/billing/by-product'),
-        api.get('/api/reports/billing/by-partner')
+        api.get('/api/reports/billing/monthly').catch(err => {
+          console.warn('Erro ao carregar dados mensais:', err);
+          return { data: [] };
+        }),
+        api.get('/api/reports/billing/by-product').catch(err => {
+          console.warn('Erro ao carregar dados por produto:', err);
+          return { data: [] };
+        }),
+        api.get('/api/reports/billing/by-partner').catch(err => {
+          console.warn('Erro ao carregar dados por parceiro:', err);
+          return { data: [] };
+        })
       ]);
 
-      setMonthlyBilling(monthlyRes.data);
-      setBillingByProduct(productRes.data);
-      setBillingByPartner(partnerRes.data);
+      setMonthlyBilling(monthlyRes.data || []);
+      setBillingByProduct(productRes.data || []);
+      setBillingByPartner(partnerRes.data || []);
+      
+      // Se não há dados, mostrar mensagem informativa
+      if (!monthlyRes.data?.length && !productRes.data?.length && !partnerRes.data?.length) {
+        setError('Nenhum dado encontrado. Faça upload de um arquivo para visualizar os relatórios.');
+      }
     } catch (err) {
-      setError('Erro ao carregar relatórios');
+      setError('Erro ao carregar relatórios: ' + (err.response?.data?.message || err.message));
       console.error('Erro:', err);
     } finally {
       setLoading(false);
@@ -48,7 +63,22 @@ function Reports() {
   }
 
   if (error) {
-    return <div className="error">{error}</div>;
+    return (
+      <div className="error-container">
+        <div className="error">
+          <h2>⚠️ {error}</h2>
+          <p>Para começar a usar os relatórios:</p>
+          <ol>
+            <li>Vá para a página de <strong>Upload</strong></li>
+            <li>Faça upload de um arquivo Excel ou CSV</li>
+            <li>Volte aqui para visualizar os relatórios</li>
+          </ol>
+          <button onClick={() => window.location.href = '/upload'} className="btn-primary">
+            Ir para Upload
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

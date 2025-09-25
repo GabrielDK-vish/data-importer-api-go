@@ -53,6 +53,7 @@ func (h *UploadHandler) UploadFileHandler(w http.ResponseWriter, r *http.Request
 	fileName := header.Filename
 
 	log.Printf("📁 Arquivo recebido: %s (%s)", fileName, contentType)
+	log.Printf("📏 Tamanho do arquivo: %d bytes", header.Size)
 
 	var partners []models.Partner
 	var customers []models.Customer

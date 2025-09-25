@@ -16,10 +16,15 @@ function Customers() {
   const loadCustomers = async () => {
     try {
       setLoading(true);
+      setError('');
       const response = await api.get('/api/customers');
-      setCustomers(response.data);
+      setCustomers(response.data || []);
+      
+      if (!response.data?.length) {
+        setError('Nenhum cliente encontrado. Faça upload de um arquivo para importar dados.');
+      }
     } catch (err) {
-      setError('Erro ao carregar clientes');
+      setError('Erro ao carregar clientes: ' + (err.response?.data?.message || err.message));
       console.error('Erro:', err);
     } finally {
       setLoading(false);
@@ -60,7 +65,22 @@ function Customers() {
   }
 
   if (error) {
-    return <div className="error">{error}</div>;
+    return (
+      <div className="error-container">
+        <div className="error">
+          <h2>⚠️ {error}</h2>
+          <p>Para começar a usar a lista de clientes:</p>
+          <ol>
+            <li>Vá para a página de <strong>Upload</strong></li>
+            <li>Faça upload de um arquivo Excel ou CSV</li>
+            <li>Volte aqui para visualizar os clientes</li>
+          </ol>
+          <button onClick={() => window.location.href = '/upload'} className="btn-primary">
+            Ir para Upload
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

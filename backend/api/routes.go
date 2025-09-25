@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -43,6 +44,7 @@ func (h *Handler) SetupRoutes() *chi.Mux {
 	r.Get("/", h.RootHandler)
 	r.Post("/auth/login", h.LoginHandler)
 	r.Get("/health", h.HealthCheckHandler)
+	r.Get("/test", h.TestHandler)
 
 	// Rotas protegidas
 	r.Route("/api", func(r chi.Router) {
@@ -658,4 +660,23 @@ func (h *Handler) HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"ok","service":"data-importer-api"}`))
+}
+
+// TestHandler retorna informações de teste da API
+func (h *Handler) TestHandler(w http.ResponseWriter, r *http.Request) {
+	testInfo := map[string]interface{}{
+		"status": "ok",
+		"message": "API funcionando corretamente",
+		"timestamp": time.Now().Format(time.RFC3339),
+		"endpoints": map[string]string{
+			"health": "/health",
+			"login": "/auth/login",
+			"upload": "/api/upload",
+			"customers": "/api/customers",
+			"reports": "/api/reports/billing/monthly",
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(testInfo)
 }
