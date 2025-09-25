@@ -26,7 +26,7 @@ function Login() {
     <div className="card" style={{ maxWidth: '400px', margin: '50px auto' }}>
       <h2>🔐 Login</h2>
       <p style={{ marginBottom: '20px', color: '#666' }}>
-        Faça login para acessar o dashboard
+        Pagina de Login
       </p>
       
       <form onSubmit={handleSubmit}>
@@ -37,7 +37,7 @@ function Login() {
             id="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="admin, user ou demo"
+            placeholder="Preencha o usuário"
             required
           />
         </div>
@@ -49,7 +49,7 @@ function Login() {
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="admin123, user123 ou demo123"
+            placeholder=""
             required
           />
         </div>
@@ -67,11 +67,9 @@ function Login() {
       </form>
 
       <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-        <h4>Credenciais de teste:</h4>
+        <h4>Credenciais para teste disponiveis no repositório</h4>
         <ul style={{ margin: '10px 0', paddingLeft: '20px' }}>
-          <li><strong>admin</strong> / admin123</li>
-          <li><strong>user</strong> / user123</li>
-          <li><strong>demo</strong> / demo123</li>
+          
         </ul>
       </div>
     </div>

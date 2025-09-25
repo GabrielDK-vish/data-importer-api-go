@@ -23,10 +23,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.log('API Error:', error.response?.status, error.response?.data);
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
+    
+    // Não redirecionar para login se for erro 404 ou outros erros não relacionados à autenticação
     return Promise.reject(error);
   }
 );
