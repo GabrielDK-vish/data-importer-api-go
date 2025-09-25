@@ -5,19 +5,16 @@ import (
 	"data-importer-api-go/internal/auth"
 	"data-importer-api-go/internal/models"
 	"data-importer-api-go/internal/service"
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/xuri/excelize/v2"
+	"github.com/go-chi/cors"
 )
 
 type Handler struct {
@@ -34,10 +31,12 @@ func (h *Handler) SetupRoutes() *chi.Mux {
 	// Middleware
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.CORS(middleware.CORSOptions{
+	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowCredentials: false,
+		MaxAge:           300,
 	}))
 
 	// Rotas públicas

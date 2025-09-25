@@ -1,10 +1,10 @@
 package api
 
 import (
-	"context"
 	"data-importer-api-go/internal/models"
 	"data-importer-api-go/internal/service"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -96,21 +96,7 @@ func (h *UploadHandler) UploadFileHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	
-	// Enviar resposta JSON
-	jsonResponse := fmt.Sprintf(`{
-		"success": true,
-		"message": "Arquivo processado com sucesso",
-		"data": {
-			"partners": %d,
-			"customers": %d,
-			"products": %d,
-			"usages": %d
-		}
-	}`, len(partners), len(customers), len(products), len(usages))
-	
-	w.Write([]byte(jsonResponse))
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *UploadHandler) processExcelFile(file io.Reader) ([]models.Partner, []models.Customer, []models.Product, []models.Usage, error) {
@@ -370,9 +356,9 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 		ResourceLocation:   getValue("resource_location"),
 		Tags:               getValue("tags"),
 		BenefitType:        getValue("benefit_type"),
-		PartnerID:          0, // Será preenchido após inserção
-		CustomerID:         0, // Será preenchido após inserção
-		ProductID:          0, // Será preenchido após inserção
+		PartnerID:          0, 
+		CustomerID:         0, // Será preenchido após inserçã
+		ProductID:          0, 
 	}
 
 	return partner, customer, product, usage, nil
