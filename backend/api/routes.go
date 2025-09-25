@@ -42,6 +42,7 @@ func (h *Handler) SetupRoutes() *chi.Mux {
 
 	// Rotas públicas
 	r.Post("/auth/login", h.LoginHandler)
+	r.Get("/health", h.HealthCheckHandler)
 
 	// Rotas protegidas
 	r.Route("/api", func(r chi.Router) {
@@ -258,4 +259,11 @@ func (h *Handler) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// HealthCheckHandler retorna status de saúde da aplicação
+func (h *Handler) HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"ok","service":"data-importer-api"}`))
 }

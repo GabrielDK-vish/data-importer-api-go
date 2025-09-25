@@ -48,7 +48,7 @@ func (s *Service) GetBillingMonthly(ctx context.Context) ([]models.BillingReport
 }
 
 // GetBillingByProduct retorna faturamento por produto
-func (s *Service) GetBillingByProduct(ctx context.Context) ([]models.BillingReport, error) {
+func (s *Service) GetBillingByProduct(ctx context.Context) ([]models.BillingByProduct, error) {
 	reports, err := s.repo.GetBillingByProduct(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("erro no service ao buscar faturamento por produto: %w", err)
@@ -57,7 +57,7 @@ func (s *Service) GetBillingByProduct(ctx context.Context) ([]models.BillingRepo
 }
 
 // GetBillingByPartner retorna faturamento por parceiro
-func (s *Service) GetBillingByPartner(ctx context.Context) ([]models.BillingReport, error) {
+func (s *Service) GetBillingByPartner(ctx context.Context) ([]models.BillingByPartner, error) {
 	reports, err := s.repo.GetBillingByPartner(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("erro no service ao buscar faturamento por parceiro: %w", err)
