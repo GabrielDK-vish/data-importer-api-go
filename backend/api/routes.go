@@ -261,32 +261,396 @@ func (h *Handler) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// RootHandler retorna informações da API
+// RootHandler retorna página inicial da API
 func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
-	apiInfo := map[string]interface{}{
-		"service": "Data Importer API",
-		"version": "1.0.0",
-		"status":  "running",
-		"endpoints": map[string]interface{}{
-			"public": []string{
-				"GET  /",
-				"GET  /health",
-				"POST /auth/login",
+	// Verificar se é uma requisição JSON
+	if r.Header.Get("Accept") == "application/json" {
+		apiInfo := map[string]interface{}{
+			"service": "Data Importer API",
+			"version": "1.0.0",
+			"status":  "running",
+			"endpoints": map[string]interface{}{
+				"public": []string{
+					"GET  /",
+					"GET  /health",
+					"POST /auth/login",
+				},
+				"protected": []string{
+					"GET  /api/customers",
+					"GET  /api/customers/{id}/usage",
+					"GET  /api/reports/billing/monthly",
+					"GET  /api/reports/billing/by-product",
+					"GET  /api/reports/billing/by-partner",
+					"POST /api/upload",
+				},
 			},
-			"protected": []string{
-				"GET  /api/customers",
-				"GET  /api/customers/{id}/usage",
-				"GET  /api/reports/billing/monthly",
-				"GET  /api/reports/billing/by-product",
-				"GET  /api/reports/billing/by-partner",
-				"POST /api/upload",
-			},
-		},
-		"documentation": "https://github.com/GabrielDK-vish/data-importer-api-go",
+			"documentation": "https://github.com/GabrielDK-vish/data-importer-api-go",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(apiInfo)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(apiInfo)
+	// Retornar página HTML
+	html := `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Importer API - Desafio Técnico</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .status {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        
+        .endpoint {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .method {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .get { background: #4CAF50; color: white; }
+        .post { background: #2196F3; color: white; }
+        .put { background: #FF9800; color: white; }
+        .delete { background: #f44336; color: white; }
+        
+        .credentials {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .credentials h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .cred-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .cred-table th, .cred-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .cred-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .feature {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .feature h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.8;
+        }
+        
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .tech {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Data Importer API</h1>
+            <p>Desafio Técnico - Full Stack Developer</p>
+            <span class="status">✅ Online</span>
+        </div>
+        
+        <div class="card">
+            <h2>📋 Sobre o Projeto</h2>
+            <p>Esta é uma API desenvolvida em <strong>Go (Golang)</strong> para importação e análise de dados de faturamento. O projeto inclui:</p>
+            
+            <div class="features">
+                <div class="feature">
+                    <h3>🔧 Backend</h3>
+                    <p>API REST em Go com PostgreSQL, autenticação JWT, e processamento de arquivos Excel/CSV.</p>
+                </div>
+                <div class="feature">
+                    <h3>🎨 Frontend</h3>
+                    <p>Interface React com dashboard, relatórios e upload de arquivos.</p>
+                </div>
+                <div class="feature">
+                    <h3>📊 Relatórios</h3>
+                    <p>Análise de faturamento por mês, produto e parceiro com visualizações interativas.</p>
+                </div>
+                <div class="feature">
+                    <h3>🔐 Segurança</h3>
+                    <p>Autenticação JWT, validação de dados e tratamento de erros robusto.</p>
+                </div>
+            </div>
+            
+            <h3>🛠️ Stack Tecnológica</h3>
+            <div class="tech-stack">
+                <span class="tech">Go (Golang)</span>
+                <span class="tech">PostgreSQL</span>
+                <span class="tech">React</span>
+                <span class="tech">JWT</span>
+                <span class="tech">Docker</span>
+                <span class="tech">Chi Router</span>
+                <span class="tech">Excelize</span>
+                <span class="tech">Render</span>
+                <span class="tech">Vercel</span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🚀 Acesso Rápido</h2>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="https://data-importer-api-go.vercel.app/" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 1.1rem; margin: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.3s ease;">
+                    🎨 Acessar Frontend
+                </a>
+                <a href="https://data-importer-api-go.onrender.com/health" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 1.1rem; margin: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.3s ease;">
+                    🔍 Health Check
+                </a>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🔑 Credenciais de Teste</h2>
+            <div class="credentials">
+                <h3>👤 Usuários Disponíveis</h3>
+                <table class="cred-table">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Senha</th>
+                            <th>Descrição</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>admin</code></td>
+                            <td><code>admin123</code></td>
+                            <td>Administrador</td>
+                        </tr>
+                        <tr>
+                            <td><code>user</code></td>
+                            <td><code>user123</code></td>
+                            <td>Usuário padrão</td>
+                        </tr>
+                        <tr>
+                            <td><code>demo</code></td>
+                            <td><code>demo123</code></td>
+                            <td>Demonstração</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🌐 Endpoints da API</h2>
+            
+            <h3>🔓 Endpoints Públicos</h3>
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/</strong> - Página inicial da API
+            </div>
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/health</strong> - Status de saúde da aplicação
+            </div>
+            <div class="endpoint">
+                <span class="method post">POST</span> <strong>/auth/login</strong> - Autenticação de usuário
+            </div>
+            
+            <h3>🔒 Endpoints Protegidos (Requer Autenticação)</h3>
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/customers</strong> - Listar todos os clientes
+            </div>
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/customers/{id}/usage</strong> - Uso detalhado por cliente
+            </div>
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/reports/billing/monthly</strong> - Faturamento por mês
+            </div>
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/reports/billing/by-product</strong> - Faturamento por produto
+            </div>
+            <div class="endpoint">
+                <span class="method get">GET</span> <strong>/api/reports/billing/by-partner</strong> - Faturamento por parceiro
+            </div>
+            <div class="endpoint">
+                <span class="method post">POST</span> <strong>/api/upload</strong> - Upload de arquivos Excel/CSV
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🌐 URLs de Produção</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
+                <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; border-left: 4px solid #2196F3;">
+                    <h3 style="color: #1976D2; margin-bottom: 10px;">🎨 Frontend</h3>
+                    <p><strong>URL:</strong> <a href="https://data-importer-api-go.vercel.app/" target="_blank" style="color: #1976D2; text-decoration: none;">https://data-importer-api-go.vercel.app/</a></p>
+                    <p><strong>Plataforma:</strong> Vercel</p>
+                    <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">✅ Online</span></p>
+                </div>
+                <div style="background: #f3e5f5; padding: 20px; border-radius: 10px; border-left: 4px solid #9C27B0;">
+                    <h3 style="color: #7B1FA2; margin-bottom: 10px;">🔧 Backend API</h3>
+                    <p><strong>URL:</strong> <a href="https://data-importer-api-go.onrender.com/" target="_blank" style="color: #7B1FA2; text-decoration: none;">https://data-importer-api-go.onrender.com/</a></p>
+                    <p><strong>Plataforma:</strong> Render</p>
+                    <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">✅ Online</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📚 Documentação e Recursos</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 20px 0;">
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 3px solid #667eea;">
+                    <h4 style="color: #667eea; margin-bottom: 8px;">📖 Repositório</h4>
+                    <p><a href="https://github.com/GabrielDK-vish/data-importer-api-go" target="_blank" style="color: #667eea; text-decoration: none;">GitHub - Código Fonte</a></p>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 3px solid #667eea;">
+                    <h4 style="color: #667eea; margin-bottom: 8px;">🗄️ Banco de Dados</h4>
+                    <p>PostgreSQL no Render</p>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 3px solid #667eea;">
+                    <h4 style="color: #667eea; margin-bottom: 8px;">🐳 Containerização</h4>
+                    <p>Docker & Docker Compose</p>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 3px solid #667eea;">
+                    <h4 style="color: #667eea; margin-bottom: 8px;">🚀 Deploy</h4>
+                    <p>CI/CD Automático</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Desenvolvido por Gabriel - Desafio Técnico Full Stack</p>
+            <p>API Version 1.0.0 | Status: Online ✅</p>
+        </div>
+    </div>
+</body>
+</html>`
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(html))
 }
 
 // HealthCheckHandler retorna status de saúde da aplicação

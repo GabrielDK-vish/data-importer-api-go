@@ -1,6 +1,6 @@
 # Desafio Técnico — Full Stack (Golang)
+##  Desafio Proposto:
 
-##  Desafio proposto:
 > Você deverá criar um **importador para uma base de dados (Postgres)** que deverá ser feito em **Golang** para armazenar os dados do arquivo enviado.  
 > Será avaliado:  
 > - **Normalização dos dados** na base de dados  
@@ -64,7 +64,8 @@
    -  **Migrations** - Controle de schema com `golang-migrate`
    -  **Scripts de execução** - Linux/Mac e Windows
    -  **Documentação completa** - Guias de execução local e Docker
-   -  **Deploy em produção** - Render/Railway (API) + Vercel (Frontend)
+   -  **Deploy em produção** - Render (API + PostgreSQL) + Vercel (Frontend)
+
 
 
 ---
@@ -127,7 +128,7 @@ data-importer-api-go/
 
 
 
-## Como Executar
+## Como Executar local
 
 ### Pré-requisitos do projeto
 - Docker e Docker Compose
@@ -166,13 +167,15 @@ docker-compose exec api go run ./cmd/importer/excel_importer.go /app/Reconfile\ 
 
 
 
-## Credenciais criadas para teste
+## Credenciais de Teste
 
-| Usuário | Senha    |
+| Usuário | Senha    | 
 |---------|----------|
-| admin   | admin123 |
-| user    | user123  |
-| demo    | demo123  |
+| admin   | admin123 | 
+| user    | user123  | 
+| demo    | demo123  | 
+
+
 
 
 ## Configuração
@@ -202,15 +205,28 @@ O `docker-compose.yml` configura:
 
 ### Arquivo de Exemplo
 `Reconfile fornecedores.csv`
+O projeto foi desenvolvido para trabalhar com o arquivo `Reconfile fornecedores.xlsx` como base.
 
 
-### Arquivo Excel Fornecido
-O projeto foi desenvolvido para trabalhar com o arquivo `Reconfile fornecedores.xlsx` fornecido no teste.
 
 
-## Deploy
-- **API:** _(N/A)_  
-- **Frontend:** _(N/A)_  
+
+###  URLs
+- **Frontend (React):** [https://data-importer-api-go.vercel.app/](https://data-importer-api-go.vercel.app/)
+- **Backend (API):** [https://data-importer-api-go.onrender.com/](https://data-importer-api-go.onrender.com/)
+- **Health Check:** [https://data-importer-api-go.onrender.com/health](https://data-importer-api-go.onrender.com/health)
+
+### Credenciais de Teste
+| Usuário | Senha    | 
+|---------|----------|
+| admin   | admin123 | 
+| user    | user123  | 
+| demo    | demo123  | 
+
+###  Plataformas de Deploy
+- **Frontend:** Vercel (deploy automático)
+- **Backend:** Render (deploy automático)
+- **Banco:** PostgreSQL no Render
 
 ---
 
