@@ -40,6 +40,7 @@ func (h *Handler) SetupRoutes() *chi.Mux {
 	}))
 
 	// Rotas públicas
+	r.Get("/", h.RootHandler)
 	r.Post("/auth/login", h.LoginHandler)
 	r.Get("/health", h.HealthCheckHandler)
 
@@ -258,6 +259,34 @@ func (h *Handler) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// RootHandler retorna informações da API
+func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
+	apiInfo := map[string]interface{}{
+		"service": "Data Importer API",
+		"version": "1.0.0",
+		"status":  "running",
+		"endpoints": map[string]interface{}{
+			"public": []string{
+				"GET  /",
+				"GET  /health",
+				"POST /auth/login",
+			},
+			"protected": []string{
+				"GET  /api/customers",
+				"GET  /api/customers/{id}/usage",
+				"GET  /api/reports/billing/monthly",
+				"GET  /api/reports/billing/by-product",
+				"GET  /api/reports/billing/by-partner",
+				"POST /api/upload",
+			},
+		},
+		"documentation": "https://github.com/GabrielDK-vish/data-importer-api-go",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(apiInfo)
 }
 
 // HealthCheckHandler retorna status de saúde da aplicação
