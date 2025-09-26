@@ -266,5 +266,4 @@ O sistema foi desenvolvido para trabalhar com o arquivo `Reconfile fornecedores.
 - [**Importador** (CLI e Upload)](./docs/importer.md) - Guia do importador
 - [**Migrations** (banco de dados)](./docs/migrations.md) - Controle de schema
 - [**Execução Local** (desenvolvimento)](./docs/local_setup.md) - Setup local
-- [**Melhorias** (correções e funcionalidades)](./docs/improvements.md) - Melhorias implementadas
 
