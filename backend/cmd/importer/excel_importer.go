@@ -43,7 +43,7 @@ func main() {
 		log.Fatalf("Erro ao processar Excel: %v", err)
 	}
 
-	log.Println("✅ Importação concluída com sucesso!")
+	log.Println("Importação concluída com sucesso!")
 }
 
 func processExcel(filename string, service *service.Service) error {
@@ -62,7 +62,7 @@ func processExcel(filename string, service *service.Service) error {
 
 	// Usar a primeira planilha
 	sheetName := sheetList[0]
-	log.Printf("📋 Processando planilha: %s", sheetName)
+	log.Printf("Processando planilha: %s", sheetName)
 
 	// Obter todas as linhas
 	rows, err := f.GetRows(sheetName)
@@ -76,7 +76,7 @@ func processExcel(filename string, service *service.Service) error {
 
 	// Processar cabeçalho
 	header := rows[0]
-	log.Printf("📋 Cabeçalhos encontrados: %v", header)
+	log.Printf("Cabeçalhos encontrados: %v", header)
 
 	// Mapear índices das colunas
 	columnMap := make(map[string]int)
@@ -119,7 +119,7 @@ func processExcel(filename string, service *service.Service) error {
 		// Processar linha
 		partner, customer, product, usage, err := parseExcelRow(record, columnMap, rowCount)
 		if err != nil {
-			log.Printf("⚠️  Erro ao processar linha %d: %v", rowCount, err)
+			log.Printf("Erro ao processar linha %d: %v", rowCount, err)
 			continue
 		}
 
@@ -151,7 +151,7 @@ func processExcel(filename string, service *service.Service) error {
 			}
 
 			processedCount += len(usages)
-			log.Printf("📦 Processado lote: %d registros", len(usages))
+			log.Printf("Processado lote: %d registros", len(usages))
 
 			// Limpar lotes
 			partners = partners[:0]
@@ -167,10 +167,10 @@ func processExcel(filename string, service *service.Service) error {
 			return fmt.Errorf("erro ao processar último lote: %w", err)
 		}
 		processedCount += len(usages)
-		log.Printf("📦 Processado último lote: %d registros", len(usages))
+		log.Printf("Processado último lote: %d registros", len(usages))
 	}
 
-	log.Printf("✅ Total processado: %d registros de %d linhas", processedCount, rowCount)
+	log.Printf("Total processado: %d registros de %d linhas", processedCount, rowCount)
 	return nil
 }
 

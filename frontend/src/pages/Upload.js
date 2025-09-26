@@ -85,7 +85,7 @@ function Upload() {
 
   return (
     <div>
-      <h1>📤 Upload de Arquivos</h1>
+      <h1>Upload de Arquivos</h1>
       
       <div className="card">
         <h2>Importar Dados</h2>
@@ -126,7 +126,7 @@ function Upload() {
             disabled={!file || uploading}
             style={{ width: '100%', marginTop: '15px' }}
           >
-            {uploading ? '⏳ Processando...' : '📤 Fazer Upload'}
+            {uploading ? 'Processando...' : 'Fazer Upload'}
           </button>
         </form>
 
@@ -139,7 +139,7 @@ function Upload() {
             borderRadius: '4px',
             color: '#155724'
           }}>
-            <h3>✅ Upload Concluído com Sucesso!</h3>
+            <h3>Upload Concluído com Sucesso!</h3>
             <p><strong>Mensagem:</strong> {result.message}</p>
             <div style={{ marginTop: '10px' }}>
               <strong>Dados processados:</strong>
@@ -150,12 +150,19 @@ function Upload() {
                 <li>Registros de uso: {result.data.usages}</li>
               </ul>
             </div>
+            <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#c3e6cb', borderRadius: '4px' }}>
+              <p style={{ margin: '0', fontWeight: 'bold' }}>Dados substituídos com sucesso!</p>
+              <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>
+                Os dados anteriores foram substituídos pelos novos dados do arquivo. 
+                Navegue para o <strong>Dashboard</strong> ou <strong>Clientes</strong> para visualizar os dados atualizados.
+              </p>
+            </div>
           </div>
         )}
       </div>
 
       <div className="card">
-        <h2>📋 Instruções</h2>
+        <h2>Instruções</h2>
         <div style={{ marginBottom: '15px' }}>
           <h3>Formatos Suportados:</h3>
           <ul>
@@ -188,7 +195,7 @@ function Upload() {
       </div>
 
       <div className="card">
-        <h2>💡 Dicas</h2>
+        <h2>Dicas</h2>
         <ul>
           <li>Certifique-se de que a primeira linha contém os cabeçalhos das colunas</li>
           <li>Use vírgulas como separador decimal (ex: 1,50)</li>
@@ -199,7 +206,7 @@ function Upload() {
       </div>
 
       <div className="card">
-        <h2>📄 Exemplo de Estrutura</h2>
+        <h2>Exemplo de Estrutura</h2>
         <p>Seu arquivo deve ter pelo menos estas colunas na primeira linha:</p>
         <div style={{ 
           backgroundColor: '#f8f9fa', 
@@ -217,6 +224,43 @@ function Upload() {
         <p style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
           <strong>Nota:</strong> O arquivo "Reconfile fornecedores.xlsx" na raiz do projeto pode ser usado como exemplo.
         </p>
+      </div>
+
+      <div className="card">
+        <h2>Comportamento do Sistema</h2>
+        <div style={{ marginBottom: '15px' }}>
+          <h3>Dados Iniciais</h3>
+          <p style={{ color: '#666', marginBottom: '10px' }}>
+            O sistema carrega automaticamente os dados do arquivo <strong>"Reconfile fornecedores.xlsx"</strong> 
+            quando iniciado pela primeira vez.
+          </p>
+        </div>
+        
+        <div style={{ marginBottom: '15px' }}>
+          <h3>Substituição de Dados</h3>
+          <p style={{ color: '#666', marginBottom: '10px' }}>
+            Quando você faz upload de um novo arquivo, o sistema <strong>substitui completamente</strong> 
+            todos os dados existentes pelos novos dados do arquivo.
+          </p>
+          <div style={{ 
+            backgroundColor: '#fff3cd', 
+            border: '1px solid #ffeaa7', 
+            borderRadius: '4px', 
+            padding: '10px',
+            marginBottom: '10px'
+          }}>
+            <strong>Importante:</strong> Esta ação não pode ser desfeita. 
+            Certifique-se de que o novo arquivo contém todos os dados que deseja manter.
+          </div>
+        </div>
+
+        <div>
+          <h3>Arquivo Original</h3>
+          <p style={{ color: '#666', margin: '0' }}>
+            O arquivo <strong>"Reconfile fornecedores.xlsx"</strong> na raiz do projeto 
+            contém os dados iniciais do sistema e pode ser usado como referência.
+          </p>
+        </div>
       </div>
     </div>
   );

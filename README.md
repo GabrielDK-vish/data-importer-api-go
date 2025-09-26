@@ -20,6 +20,8 @@
 ### 1. **Importador/Input de Dados** 
    -  **CLI em Go** - Importador de linha de comando para CSV/Excel
    -  **Upload via Web** - Interface React para upload de arquivos
+   -  **Carregamento Automático** - Sistema carrega automaticamente dados do arquivo "Reconfile fornecedores.xlsx" na inicialização
+   -  **Substituição de Dados** - Novos uploads substituem completamente os dados existentes
    -  **Processamento** - Conversão e normalização automática
    -  **Performance** - Inserção em lote com `pgx.CopyFrom`
 
@@ -203,9 +205,14 @@ O `docker-compose.yml` configura:
 
 ## Dados de Exemplo
 
-### Arquivo de Exemplo
-`Reconfile fornecedores.csv`
-O projeto foi desenvolvido para trabalhar com o arquivo `Reconfile fornecedores.xlsx` como base.
+### Carregamento Automático
+O sistema foi desenvolvido para trabalhar com o arquivo `Reconfile fornecedores.xlsx` como base. Este arquivo é carregado automaticamente quando a aplicação inicia pela primeira vez.
+
+### Comportamento do Sistema
+- **Primeira inicialização**: Sistema carrega automaticamente os dados do arquivo "Reconfile fornecedores.xlsx"
+- **Upload de novos arquivos**: Substitui completamente todos os dados existentes pelos novos dados
+- **Processo atômico**: A substituição é tudo ou nada (sem dados parciais)
+- **Verificação inteligente**: Se já existirem dados no banco, não recarrega automaticamente
 
 
 
@@ -230,9 +237,34 @@ O projeto foi desenvolvido para trabalhar com o arquivo `Reconfile fornecedores.
 
 ---
 
+## Melhorias Implementadas
+
+### Carregamento Automático de Dados
+- Sistema verifica automaticamente se existem dados no banco na inicialização
+- Carrega dados do arquivo "Reconfile fornecedores.xlsx" se o banco estiver vazio
+- Evita recarregamento desnecessário se dados já existirem
+
+### Substituição Inteligente de Dados
+- Upload de novos arquivos substitui completamente os dados existentes
+- Processo atômico garante integridade dos dados
+- Limpeza automática antes da inserção de novos dados
+
+### Tratamento de Erros Melhorado
+- Correção do carregamento infinito na página de clientes
+- Melhor tratamento de erros de autenticação
+- Logs informativos para debugging
+
+### Interface Aprimorada
+- Explicações claras sobre o comportamento do sistema
+- Avisos sobre substituição de dados
+- Feedback melhorado após uploads
+
+---
+
 ## Documentação 
 - [**API** (endpoints e exemplos)](./docs/api.md) - Documentação completa da API
 - [**Importador** (CLI e Upload)](./docs/importer.md) - Guia do importador
 - [**Migrations** (banco de dados)](./docs/migrations.md) - Controle de schema
 - [**Execução Local** (desenvolvimento)](./docs/local_setup.md) - Setup local
+- [**Melhorias** (correções e funcionalidades)](./docs/improvements.md) - Melhorias implementadas
 

@@ -108,7 +108,7 @@ func (h *Handler) processRows(rows [][]string) ([]models.Partner, []models.Custo
 		// Processar linha
 		partner, customer, product, usage, err := h.parseRow(record, columnMap, i)
 		if err != nil {
-			log.Printf("⚠️  Erro ao processar linha %d: %v", i, err)
+			log.Printf("Erro ao processar linha %d: %v", i, err)
 			continue
 		}
 

@@ -34,11 +34,13 @@ function Customers() {
   const loadCustomerUsage = async (customerId) => {
     try {
       setUsageLoading(true);
+      setError(''); // Limpar erros anteriores
       const response = await api.get(`/api/customers/${customerId}/usage`);
-      setCustomerUsage(response.data);
+      setCustomerUsage(response.data || []);
     } catch (err) {
-      setError('Erro ao carregar uso do cliente');
-      console.error('Erro:', err);
+      console.error('Erro ao carregar uso do cliente:', err);
+      // Não definir erro global, apenas mostrar mensagem local
+      setCustomerUsage([]);
     } finally {
       setUsageLoading(false);
     }
@@ -68,7 +70,7 @@ function Customers() {
     return (
       <div className="error-container">
         <div className="error">
-          <h2>⚠️ {error}</h2>
+          <h2>{error}</h2>
           <p>Para começar a usar a lista de clientes:</p>
           <ol>
             <li>Vá para a página de <strong>Upload</strong></li>
@@ -85,7 +87,7 @@ function Customers() {
 
   return (
     <div>
-      <h1>👥 Clientes</h1>
+      <h1>Clientes</h1>
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
         {/* Lista de clientes */}
@@ -167,9 +169,12 @@ function Customers() {
                   </table>
                 </div>
               ) : (
-                <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>
-                  Nenhum registro de uso encontrado para este cliente.
-                </p>
+                <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                  <p>Nenhum registro de uso encontrado para este cliente.</p>
+                  <p style={{ fontSize: '14px', marginTop: '10px' }}>
+                    Isso pode indicar que o cliente não possui dados de uso ou que ainda não foi feito upload de dados.
+                  </p>
+                </div>
               )}
             </>
           ) : (

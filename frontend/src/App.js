@@ -70,7 +70,7 @@ function AppContent() {
     <div className="App">
       <header className="header">
         <div className="container">
-          <h1>📊 Data Importer Dashboard</h1>
+          <h1>Data Importer Dashboard</h1>
           <p>Visualização de dados de faturamento e uso</p>
         </div>
       </header>

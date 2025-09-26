@@ -59,7 +59,7 @@ function Dashboard() {
     return (
       <div className="error-container">
         <div className="error">
-          <h2>⚠️ {error}</h2>
+          <h2>{error}</h2>
           <p>Para começar a usar o dashboard:</p>
           <ol>
             <li>Vá para a página de <strong>Upload</strong></li>
@@ -80,7 +80,7 @@ function Dashboard() {
 
   return (
     <div>
-      <h1>📊 Dashboard</h1>
+      <h1>Dashboard</h1>
       
       {/* Cards de estatísticas */}
       <div className="stats-grid">
@@ -104,7 +104,7 @@ function Dashboard() {
 
       {/* Gráfico de faturamento mensal */}
       <div className="chart-container">
-        <h2>📈 Faturamento Mensal</h2>
+        <h2>Faturamento Mensal</h2>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={monthlyBilling}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -124,7 +124,7 @@ function Dashboard() {
 
       {/* Gráfico de faturamento por produto */}
       <div className="chart-container">
-        <h2>🛍️ Faturamento por Produto</h2>
+        <h2>Faturamento por Produto</h2>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
@@ -148,7 +148,7 @@ function Dashboard() {
 
       {/* Tabela de top produtos */}
       <div className="card">
-        <h2>🏆 Top Produtos por Faturamento</h2>
+        <h2>Top Produtos por Faturamento</h2>
         <table className="table">
           <thead>
             <tr>
@@ -173,7 +173,7 @@ function Dashboard() {
 
       {/* Tabela de top parceiros */}
       <div className="card">
-        <h2>🤝 Top Parceiros por Faturamento</h2>
+        <h2>Top Parceiros por Faturamento</h2>
         <table className="table">
           <thead>
             <tr>

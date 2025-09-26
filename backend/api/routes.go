@@ -216,7 +216,7 @@ func (h *Handler) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Verificar tipo de arquivo
 	fileName := header.Filename
-	log.Printf("📁 Arquivo recebido: %s", fileName)
+	log.Printf("Arquivo recebido: %s", fileName)
 
 	var partners []models.Partner
 	var customers []models.Customer
@@ -234,23 +234,28 @@ func (h *Handler) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		log.Printf("❌ Erro ao processar arquivo: %v", err)
+		log.Printf("Erro ao processar arquivo: %v", err)
 		http.Error(w, fmt.Sprintf("Erro ao processar arquivo: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Inserir dados no banco
-	err = h.service.ProcessImportData(r.Context(), partners, customers, products, usages)
+	// Inserir dados no banco (substituindo dados existentes)
+	log.Printf("Iniciando substituição de dados: %d partners, %d customers, %d products, %d usages", 
+		len(partners), len(customers), len(products), len(usages))
+	
+	err = h.service.ProcessImportDataWithReplace(r.Context(), partners, customers, products, usages)
 	if err != nil {
-		log.Printf("❌ Erro ao inserir dados: %v", err)
-		http.Error(w, fmt.Sprintf("Erro ao inserir dados: %v", err), http.StatusInternalServerError)
+		log.Printf("Erro ao inserir dados: %v", err)
+		http.Error(w, fmt.Sprintf("Erro ao inserir dados no banco: %v", err), http.StatusInternalServerError)
 		return
 	}
+	
+	log.Printf("Dados substituídos com sucesso")
 
 	// Resposta de sucesso
 	response := map[string]interface{}{
 		"success": true,
-		"message": "Arquivo processado com sucesso",
+		"message": "Arquivo processado e dados substituídos com sucesso",
 		"data": map[string]interface{}{
 			"partners":  len(partners),
 			"customers": len(customers),

@@ -328,3 +328,23 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 
 	return nil
 }
+
+// ClearAllData limpa todos os dados das tabelas
+func (r *Repository) ClearAllData(ctx context.Context) error {
+	// Limpar dados na ordem correta (respeitando foreign keys)
+	queries := []string{
+		"DELETE FROM usages",
+		"DELETE FROM products", 
+		"DELETE FROM customers",
+		"DELETE FROM partners",
+	}
+	
+	for _, query := range queries {
+		_, err := r.db.Exec(ctx, query)
+		if err != nil {
+			return fmt.Errorf("erro ao executar query %s: %w", query, err)
+		}
+	}
+	
+	return nil
+}

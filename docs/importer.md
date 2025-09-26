@@ -1,4 +1,4 @@
-# 📥 Guia do Importador CLI
+# Guia do Importador CLI
 
 ## Visão Geral
 
@@ -11,13 +11,15 @@ O Importador CLI é uma ferramenta desenvolvida em Golang para importar dados de
 
 ## Funcionalidades
 
-- ✅ **Leitura de CSV e Excel** com validação de colunas
-- ✅ **Normalização automática** dos dados
-- ✅ **Inserção em lotes** para alta performance
-- ✅ **Tratamento de erros** robusto
-- ✅ **Validação de tipos** de dados
-- ✅ **Suporte a múltiplos formatos** de data
-- ✅ **Conversão automática** de números seriais do Excel
+- **Leitura de CSV e Excel** com validação de colunas
+- **Normalização automática** dos dados
+- **Inserção em lotes** para alta performance
+- **Tratamento de erros** robusto
+- **Validação de tipos** de dados
+- **Suporte a múltiplos formatos** de data
+- **Conversão automática** de números seriais do Excel
+- **Carregamento automático** de dados na inicialização
+- **Substituição inteligente** de dados existentes
 
 ## Estrutura do Arquivo CSV
 
@@ -214,16 +216,16 @@ parseFloat := func(value string) (float64, error) {
 ### 2. Logs de Erro
 
 ```
-⚠️  Erro ao ler linha 15: coluna 'quantity' inválida
-⚠️  Erro ao processar linha 23: formato de data inválido: 15/01/2024
+Erro ao ler linha 15: coluna 'quantity' inválida
+Erro ao processar linha 23: formato de data inválido: 15/01/2024
 ```
 
 ### 3. Estatísticas de Processamento
 
 ```
-📦 Processado lote: 1000 registros
-📦 Processado último lote: 250 registros
-✅ Total processado: 1250 registros de 1250 linhas
+Processado lote: 1000 registros
+Processado último lote: 250 registros
+Total processado: 1250 registros de 1250 linhas
 ```
 
 ## Performance
@@ -323,10 +325,44 @@ cmd/importer/
     └── parseDate()      # Converte string para data
 ```
 
+## Carregamento Automático
+
+O sistema possui carregamento automático de dados na inicialização:
+
+### Funcionamento
+- **Verificação Automática**: Na inicialização, o sistema verifica se existem dados no banco
+- **Carregamento Inicial**: Se o banco estiver vazio, carrega automaticamente os dados do arquivo "Reconfile fornecedores.xlsx"
+- **Evita Duplicação**: Se já existirem dados, não recarrega automaticamente
+
+### Logs Esperados
+```
+Dados já existem no banco (X clientes encontrados)
+```
+ou
+```
+Carregando dados iniciais do arquivo: Reconfile fornecedores.xlsx
+Dados iniciais carregados com sucesso
+```
+
+## Substituição de Dados
+
+### Comportamento do Upload
+- **Substituição Completa**: Upload de novos arquivos substitui completamente os dados existentes
+- **Processo Atômico**: A operação é tudo ou nada (sem dados parciais)
+- **Limpeza Automática**: Sistema limpa automaticamente as tabelas na ordem correta
+
+### Logs de Substituição
+```
+Iniciando substituição de dados: X partners, Y customers, Z products, W usages
+Dados substituídos com sucesso
+```
+
 ## Próximos Passos
 
-- [ ] Suporte a arquivos Excel (.xlsx)
-- [ ] Validação de duplicatas
+- [x] Suporte a arquivos Excel (.xlsx)
+- [x] Carregamento automático de dados
+- [x] Substituição inteligente de dados
 - [ ] Modo dry-run para teste
 - [ ] Relatório de importação detalhado
 - [ ] Suporte a arquivos grandes (>1GB)
+- [ ] Backup automático antes da substituição

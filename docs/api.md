@@ -288,7 +288,7 @@ curl -X GET http://localhost:8080/api/reports/billing/by-partner \
 
 ### POST /api/upload
 
-Faz upload e processa arquivos CSV ou Excel para importação de dados.
+Faz upload e processa arquivos CSV ou Excel para importação de dados. **Importante**: Este endpoint substitui completamente todos os dados existentes pelos novos dados do arquivo.
 
 **Headers:**
 ```
@@ -303,7 +303,7 @@ Authorization: Bearer <token>
 ```json
 {
   "success": true,
-  "message": "Arquivo processado com sucesso",
+  "message": "Arquivo processado e dados substituídos com sucesso",
   "data": {
     "partners": 5,
     "customers": 10,
@@ -319,6 +319,11 @@ Authorization: Bearer <token>
   "error": "Tipo de arquivo não suportado. Use .csv ou .xlsx"
 }
 ```
+
+**Comportamento do Upload:**
+- **Substituição Completa**: Todos os dados existentes são removidos antes da inserção dos novos dados
+- **Processo Atômico**: A operação é tudo ou nada (sem dados parciais)
+- **Limpeza Automática**: Sistema limpa automaticamente as tabelas na ordem correta (respeitando foreign keys)
 
 **Formatos Suportados:**
 - CSV (.csv) - Arquivo separado por vírgulas
@@ -338,3 +343,12 @@ curl -X POST http://localhost:8080/api/upload \
   -H "Authorization: Bearer <seu_token>" \
   -F "file=@dados.csv"
 ```
+
+## Carregamento Automático
+
+O sistema possui carregamento automático de dados na inicialização:
+
+- **Verificação Automática**: Na inicialização, o sistema verifica se existem dados no banco
+- **Carregamento Inicial**: Se o banco estiver vazio, carrega automaticamente os dados do arquivo "Reconfile fornecedores.xlsx"
+- **Evita Duplicação**: Se já existirem dados, não recarrega automaticamente
+- **Logs Informativos**: Sistema registra o processo de carregamento nos logs

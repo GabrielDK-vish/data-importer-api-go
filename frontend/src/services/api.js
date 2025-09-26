@@ -25,12 +25,13 @@ api.interceptors.response.use(
   (error) => {
     console.log('API Error:', error.response?.status, error.response?.data);
     
-    if (error.response?.status === 401) {
+    // Só redirecionar para login se for erro 401 e não estiver já na página de login
+    if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
     
-    // Não redirecionar para login se for erro 404 ou outros erros não relacionados à autenticação
+    // Para outros erros, não redirecionar automaticamente
     return Promise.reject(error);
   }
 );
