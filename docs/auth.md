@@ -1,30 +1,24 @@
-# Autenticação com PostgreSQL
+# Sistema de Autenticação
 
-## Migração de Autenticação Local para Banco de Dados
+## Visão Geral
 
-O sistema foi migrado de autenticação hardcoded para autenticação baseada em banco de dados PostgreSQL.
+O sistema utiliza autenticação baseada em banco de dados PostgreSQL com JWT para sessões.
 
-### Mudanças Implementadas
+## Estrutura
 
-1. **Nova tabela `users`**:
-   - Campos: `id`, `username`, `password_hash`, `email`, `full_name`, `is_active`, `created_at`, `updated_at`
-   - Índices em `username` e `email`
-   - Senhas armazenadas com hash bcrypt
-
-2. **Migration 006**: `006_create_users_table.up.sql`
-   - Cria a tabela `users`
-   - Insere usuários padrão com senhas hasheadas
-
-3. **Modelo `User`**: Adicionado em `internal/models/models.go`
-
-4. **Repository**: Método `GetUserByUsername()` em `internal/repository/repository.go`
-
-5. **Service**: Método `ValidateUserCredentials()` em `internal/service/service.go`
-   - Valida credenciais usando bcrypt
-   - Retorna dados do usuário se válido
-
-6. **API**: Login atualizado em `api/routes.go`
-   - Usa `service.ValidateUserCredentials()` em vez de `auth.ValidateCredentials()`
+### Tabela Users
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    full_name VARCHAR(255),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ### Usuários Padrão
 
@@ -34,41 +28,112 @@ O sistema foi migrado de autenticação hardcoded para autenticação baseada em
 | user     | user123  | user@example.com | Regular User |
 | demo     | demo123  | demo@example.com | Demo User |
 
-### Como Executar
+## Implementação
 
-1. **Executar migrations**:
-   ```bash
-   # As migrations incluem a criação da tabela e inserção dos usuários
-   go run ./cmd/main.go
-   ```
+### Validação de Credenciais
+```go
+func (s *Service) ValidateUserCredentials(ctx context.Context, username, password string) (*models.User, error) {
+    user, err := s.repo.GetUserByUsername(ctx, username)
+    if err != nil {
+        return nil, fmt.Errorf("erro ao buscar usuário: %w", err)
+    }
+    
+    if user == nil {
+        return nil, fmt.Errorf("usuário não encontrado")
+    }
+    
+    if err := s.comparePassword(password, user.PasswordHash); err != nil {
+        return nil, fmt.Errorf("senha inválida")
+    }
+    
+    return user, nil
+}
+```
 
-2. **Ou executar script SQL manualmente**:
-   ```bash
-   psql -d data_importer -f backend/scripts/create_users.sql
-   ```
+### Geração de Token JWT
+```go
+func GenerateToken(username string) (string, error) {
+    expirationTime := time.Now().Add(24 * time.Hour)
+    
+    claims := &Claims{
+        Username: username,
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(expirationTime),
+            IssuedAt:  jwt.NewNumericDate(time.Now()),
+            NotBefore: jwt.NewNumericDate(time.Now()),
+        },
+    }
+    
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString(jwtSecret)
+}
+```
 
-3. **Ou usar o script Go**:
-   ```bash
-   go run ./cmd/create_users.go
-   ```
+## Segurança
 
-### Segurança
+- Senhas hasheadas com bcrypt (cost 10)
+- Campo password_hash não exposto no JSON
+- Usuários inativos não podem fazer login
+- Tokens JWT expiram em 24 horas
+- Validação de entrada em todos os endpoints
 
-- Senhas são hasheadas com bcrypt (cost 10)
-- Campo `password_hash` não é exposto no JSON (tag `json:"-"`)
-- Usuários inativos (`is_active = false`) não podem fazer login
-- JWT continua sendo usado para sessões
+## Migrations
 
-### Compatibilidade
+### 006_create_users_table.up.sql
+Cria tabela users e insere usuários padrão.
 
-- A função `auth.ValidateCredentials()` foi marcada como DEPRECATED
-- Mantida apenas para compatibilidade, mas não é mais usada
-- Login agora sempre consulta o banco de dados
+### 008_upsert_demo_users.up.sql
+Atualiza usuários com hashes corretos.
 
-### Próximos Passos
+### 009_update_password_hashes.up.sql
+Corrige hashes de senha em produção.
 
-1. **Adicionar endpoint para criar usuários** (admin only)
-2. **Implementar reset de senha**
-3. **Adicionar roles/permissões**
-4. **Logs de auditoria de login**
-5. **Rate limiting no login**
+## Uso
+
+### Login via API
+```bash
+curl -X POST https://data-importer-api-go.onrender.com/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin123"}'
+```
+
+### Usar Token
+```bash
+curl -X GET https://data-importer-api-go.onrender.com/api/customers \
+  -H "Authorization: Bearer <token>"
+```
+
+## Configuração
+
+### Variáveis de Ambiente
+```bash
+JWT_SECRET=sua-chave-secreta-super-segura-aqui
+DATABASE_URL=postgres://user:pass@host:port/db?sslmode=disable
+```
+
+### Middleware de Autenticação
+```go
+func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        authHeader := r.Header.Get("Authorization")
+        if authHeader == "" {
+            http.Error(w, "Token de autorização necessário", http.StatusUnauthorized)
+            return
+        }
+        
+        tokenString := authHeader
+        if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+            tokenString = authHeader[7:]
+        }
+        
+        claims, err := auth.ValidateToken(tokenString)
+        if err != nil {
+            http.Error(w, "Token inválido", http.StatusUnauthorized)
+            return
+        }
+        
+        ctx := context.WithValue(r.Context(), "username", claims.Username)
+        next.ServeHTTP(w, r.WithContext(ctx))
+    })
+}
+```

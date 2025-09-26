@@ -2,9 +2,9 @@
 
 ## Visão Geral
 
-As migrations são scripts SQL que criam e modificam a estrutura do banco de dados PostgreSQL. Utilizamos a biblioteca `golang-migrate` para gerenciar as migrations automaticamente.
+Migrations SQL para gerenciar estrutura do banco PostgreSQL usando golang-migrate.
 
-## Estrutura das Migrations
+## Estrutura
 
 ```
 backend/db/migrations/
@@ -17,15 +17,21 @@ backend/db/migrations/
 ├── 004_create_usages_table.up.sql
 ├── 004_create_usages_table.down.sql
 ├── 005_insert_test_data.up.sql
-└── 005_insert_test_data.down.sql
+├── 005_insert_test_data.down.sql
+├── 006_create_users_table.up.sql
+├── 006_create_users_table.down.sql
+├── 007_fix_user_passwords.up.sql
+├── 008_upsert_demo_users.up.sql
+├── 008_upsert_demo_users.down.sql
+├── 009_update_password_hashes.up.sql
+└── 009_update_password_hashes.down.sql
 ```
 
-## Tabelas Criadas
+## Tabelas
 
-### 1. Partners (Parceiros)
-
+### Partners
 ```sql
-CREATE TABLE IF NOT EXISTS partners (
+CREATE TABLE partners (
     id SERIAL PRIMARY KEY,
     partner_id VARCHAR(255) UNIQUE NOT NULL,
     partner_name VARCHAR(255) NOT NULL,
@@ -34,23 +40,11 @@ CREATE TABLE IF NOT EXISTS partners (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE INDEX idx_partners_partner_id ON partners(partner_id);
 ```
 
-**Campos:**
-- `id` - Chave primária auto-incremento
-- `partner_id` - ID único do parceiro
-- `partner_name` - Nome do parceiro
-- `mpn_id` - ID do MPN (opcional)
-- `tier2_mpn_id` - ID do Tier2 MPN (opcional)
-- `created_at` - Data de criação
-- `updated_at` - Data de atualização
-
-### 2. Customers (Clientes)
-
+### Customers
 ```sql
-CREATE TABLE IF NOT EXISTS customers (
+CREATE TABLE customers (
     id SERIAL PRIMARY KEY,
     customer_id VARCHAR(255) UNIQUE NOT NULL,
     customer_name VARCHAR(255) NOT NULL,
@@ -59,24 +53,11 @@ CREATE TABLE IF NOT EXISTS customers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE INDEX idx_customers_customer_id ON customers(customer_id);
-CREATE INDEX idx_customers_country ON customers(country);
 ```
 
-**Campos:**
-- `id` - Chave primária auto-incremento
-- `customer_id` - ID único do cliente
-- `customer_name` - Nome do cliente
-- `customer_domain_name` - Domínio do cliente (opcional)
-- `country` - País do cliente
-- `created_at` - Data de criação
-- `updated_at` - Data de atualização
-
-### 3. Products (Produtos)
-
+### Products
 ```sql
-CREATE TABLE IF NOT EXISTS products (
+CREATE TABLE products (
     id SERIAL PRIMARY KEY,
     product_id VARCHAR(255) UNIQUE NOT NULL,
     sku_id VARCHAR(255) NOT NULL,
@@ -89,29 +70,11 @@ CREATE TABLE IF NOT EXISTS products (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE INDEX idx_products_product_id ON products(product_id);
-CREATE INDEX idx_products_sku_id ON products(sku_id);
-CREATE INDEX idx_products_category ON products(category);
 ```
 
-**Campos:**
-- `id` - Chave primária auto-incremento
-- `product_id` - ID único do produto
-- `sku_id` - ID do SKU
-- `sku_name` - Nome do SKU
-- `product_name` - Nome do produto
-- `meter_type` - Tipo de medição (opcional)
-- `category` - Categoria do produto
-- `sub_category` - Subcategoria (opcional)
-- `unit_type` - Tipo de unidade (opcional)
-- `created_at` - Data de criação
-- `updated_at` - Data de atualização
-
-### 4. Usages (Usos)
-
+### Usages
 ```sql
-CREATE TABLE IF NOT EXISTS usages (
+CREATE TABLE usages (
     id SERIAL PRIMARY KEY,
     invoice_number VARCHAR(255),
     charge_start_date DATE,
@@ -128,96 +91,44 @@ CREATE TABLE IF NOT EXISTS usages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE INDEX idx_usages_partner_id ON usages(partner_id);
-CREATE INDEX idx_usages_customer_id ON usages(customer_id);
-CREATE INDEX idx_usages_product_id ON usages(product_id);
-CREATE INDEX idx_usages_usage_date ON usages(usage_date);
-CREATE INDEX idx_usages_charge_start_date ON usages(charge_start_date);
-CREATE INDEX idx_usages_invoice_number ON usages(invoice_number);
 ```
 
-**Campos:**
-- `id` - Chave primária auto-incremento
-- `invoice_number` - Número da fatura (opcional)
-- `charge_start_date` - Data de início da cobrança (opcional)
-- `usage_date` - Data do uso (obrigatório)
-- `quantity` - Quantidade utilizada
-- `unit_price` - Preço unitário
-- `billing_pre_tax_total` - Total antes dos impostos
-- `resource_location` - Localização do recurso (opcional)
-- `tags` - Tags adicionais (opcional)
-- `benefit_type` - Tipo de benefício (opcional)
-- `partner_id` - Referência ao parceiro
-- `customer_id` - Referência ao cliente
-- `product_id` - Referência ao produto
-- `created_at` - Data de criação
-- `updated_at` - Data de atualização
+### Users
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    full_name VARCHAR(255),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ## Relacionamentos
 
 ### Chaves Estrangeiras
+- usages.partner_id → partners.id
+- usages.customer_id → customers.id
+- usages.product_id → products.id
 
+### Índices
 ```sql
--- Usages → Partners
-partner_id INTEGER REFERENCES partners(id) ON DELETE CASCADE
-
--- Usages → Customers  
-customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE
-
--- Usages → Products
-product_id INTEGER REFERENCES products(id) ON DELETE CASCADE
-```
-
-### Índices para Performance
-
-```sql
--- Índices para consultas frequentes
+CREATE INDEX idx_partners_partner_id ON partners(partner_id);
+CREATE INDEX idx_customers_customer_id ON customers(customer_id);
+CREATE INDEX idx_products_product_id ON products(product_id);
 CREATE INDEX idx_usages_usage_date ON usages(usage_date);
-CREATE INDEX idx_usages_partner_id ON usages(partner_id);
-CREATE INDEX idx_usages_customer_id ON usages(customer_id);
-CREATE INDEX idx_usages_product_id ON usages(product_id);
+CREATE INDEX idx_users_username ON users(username);
 ```
 
-## Execução das Migrations
+## Execução
 
-### 1. Automática (Recomendado)
+### Automática (Recomendado)
+Migrations executam automaticamente na inicialização da API.
 
-As migrations são executadas automaticamente quando a API inicia:
-
-```go
-// Em cmd/main.go
-func runMigrations(databaseURL string) error {
-    m, err := migrate.New(
-        "file://db/migrations",
-        databaseURL,
-    )
-    if err != nil {
-        return fmt.Errorf("erro ao criar migrator: %w", err)
-    }
-    defer m.Close()
-
-    if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-        return fmt.Errorf("erro ao executar migrations: %w", err)
-    }
-
-    log.Println("Migrations executadas com sucesso")
-    return nil
-}
-```
-
-### 2. Manual com Docker
-
-```bash
-# Executar migrations manualmente
-docker-compose exec api migrate -path /app/db/migrations -database "postgres://postgres:password@postgres:5432/data_importer?sslmode=disable" up
-
-# Reverter migrations
-docker-compose exec api migrate -path /app/db/migrations -database "postgres://postgres:password@postgres:5432/data_importer?sslmode=disable" down
-```
-
-### 3. Localmente
-
+### Manual Local
 ```bash
 # Instalar golang-migrate
 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
@@ -229,39 +140,18 @@ migrate -path ./db/migrations -database "postgres://postgres:password@localhost:
 migrate -path ./db/migrations -database "postgres://postgres:password@localhost:5432/data_importer?sslmode=disable" down
 ```
 
-## Dados de Teste
+### Via Docker
+```bash
+# Executar migrations
+docker-compose exec api migrate -path /app/db/migrations -database "postgres://postgres:password@postgres:5432/data_importer?sslmode=disable" up
 
-### Migration 005: Insert Test Data
-
-```sql
--- Inserir dados de teste para partners
-INSERT INTO partners (partner_id, partner_name, mpn_id, tier2_mpn_id) VALUES
-('PARTNER001', 'Microsoft Corporation', 'MPN001', 'T2MPN001'),
-('PARTNER002', 'Amazon Web Services', 'MPN002', 'T2MPN002'),
-('PARTNER003', 'Google Cloud Platform', 'MPN003', 'T2MPN003')
-ON CONFLICT (partner_id) DO NOTHING;
-
--- Inserir dados de teste para customers
-INSERT INTO customers (customer_id, customer_name, customer_domain_name, country) VALUES
-('CUST001', 'TechCorp Solutions', 'techcorp.com', 'Brazil'),
-('CUST002', 'DataFlow Inc', 'dataflow.com', 'United States'),
-('CUST003', 'CloudTech Ltd', 'cloudtech.co.uk', 'United Kingdom'),
-('CUST004', 'InnovateSoft', 'innovatesoft.com', 'Canada')
-ON CONFLICT (customer_id) DO NOTHING;
-
--- Inserir dados de teste para products
-INSERT INTO products (product_id, sku_id, sku_name, product_name, meter_type, category, sub_category, unit_type) VALUES
-('PROD001', 'SKU001', 'Azure Virtual Machine', 'Azure Compute', 'Compute', 'Virtual Machines', 'Standard', 'Hours'),
-('PROD002', 'SKU002', 'AWS EC2 Instance', 'AWS Compute', 'Compute', 'EC2', 'General Purpose', 'Hours'),
-('PROD003', 'SKU003', 'Google Cloud Storage', 'GCP Storage', 'Storage', 'Cloud Storage', 'Standard', 'GB-Month'),
-('PROD004', 'SKU004', 'Azure SQL Database', 'Azure Database', 'Database', 'SQL Database', 'Standard', 'DTU-Hours')
-ON CONFLICT (product_id) DO NOTHING;
+# Reverter migrations
+docker-compose exec api migrate -path /app/db/migrations -database "postgres://postgres:password@postgres:5432/data_importer?sslmode=disable" down
 ```
 
-## Verificação das Migrations
+## Verificação
 
-### 1. Conectar ao Banco
-
+### Conectar ao Banco
 ```bash
 # Via Docker
 docker-compose exec postgres psql -U postgres -d data_importer
@@ -270,75 +160,89 @@ docker-compose exec postgres psql -U postgres -d data_importer
 psql -U postgres -d data_importer
 ```
 
-### 2. Verificar Tabelas
-
+### Verificar Tabelas
 ```sql
--- Listar todas as tabelas
+-- Listar tabelas
 \dt
 
--- Verificar estrutura de uma tabela
+-- Verificar estrutura
 \d partners
 \d customers
 \d products
 \d usages
+\d users
 ```
 
-### 3. Verificar Dados
-
+### Verificar Dados
 ```sql
--- Contar registros em cada tabela
+-- Contar registros
 SELECT 'partners' as tabela, COUNT(*) as registros FROM partners
 UNION ALL
 SELECT 'customers', COUNT(*) FROM customers
 UNION ALL
 SELECT 'products', COUNT(*) FROM products
 UNION ALL
-SELECT 'usages', COUNT(*) FROM usages;
+SELECT 'usages', COUNT(*) FROM usages
+UNION ALL
+SELECT 'users', COUNT(*) FROM users;
 ```
 
-### 4. Verificar Relacionamentos
+## Dados de Teste
 
+### Usuários Padrão
 ```sql
--- Verificar integridade referencial
-SELECT 
-    p.partner_name,
-    COUNT(u.id) as total_usages
-FROM partners p
-LEFT JOIN usages u ON p.id = u.partner_id
-GROUP BY p.id, p.partner_name;
+INSERT INTO users (username, password_hash, email, full_name, is_active) VALUES
+('admin', '$2a$10$kR.pK7uclXtW7Qrt3UlLiONpGCukqRBkwOKLkR/iynitqqdwSUTdG', 'admin@example.com', 'Administrator', true),
+('user', '$2a$10$1TGCvNlUXWSQmVvDl/zZBO1qy.W6XRWi95gEtgZZ3qB45HIcgYHwS', 'user@example.com', 'Regular User', true),
+('demo', '$2a$10$22F5d06lzO.LHTPQP4aTFu8PM7f6iQTMLdw/KwK7DKEGSciWzFBGG', 'demo@example.com', 'Demo User', true)
+ON CONFLICT (username) DO UPDATE SET
+  password_hash = EXCLUDED.password_hash,
+  email = EXCLUDED.email,
+  full_name = EXCLUDED.full_name,
+  is_active = EXCLUDED.is_active,
+  updated_at = CURRENT_TIMESTAMP;
 ```
 
 ## Troubleshooting
 
 ### Erro: "relation does not exist"
-
-**Causa**: Migrations não foram executadas.
-
-**Solução**: 
+Migrations não foram executadas.
 ```bash
-# Verificar se migrations foram executadas
+# Verificar logs
 docker-compose logs api | grep "Migrations executadas"
 
-# Executar migrations manualmente
+# Executar manualmente
 docker-compose exec api migrate -path /app/db/migrations -database "postgres://postgres:password@postgres:5432/data_importer?sslmode=disable" up
 ```
 
 ### Erro: "duplicate key value violates unique constraint"
-
-**Causa**: Tentativa de inserir dados duplicados.
-
-**Solução**: Usar `ON CONFLICT DO NOTHING` ou `ON CONFLICT DO UPDATE`.
+Dados duplicados. Usar ON CONFLICT DO NOTHING ou ON CONFLICT DO UPDATE.
 
 ### Erro: "foreign key constraint fails"
+Referência inexistente. Verificar se dados de referência existem.
 
-**Causa**: Tentativa de inserir uso com partner/customer/product inexistente.
+### Erro: "migrate: command not found"
+```bash
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+export PATH=$PATH:$(go env GOPATH)/bin
+```
 
-**Solução**: Verificar se os dados de referência existem antes de inserir usages.
+## Histórico de Migrations
 
-## Próximos Passos
+### 001-004: Tabelas Principais
+Criação das tabelas partners, customers, products, usages.
 
-- [ ] Adicionar migrations para índices adicionais
-- [ ] Implementar versionamento de schema
-- [ ] Adicionar validações de integridade
-- [ ] Criar migrations para dados de produção
-- [ ] Implementar rollback automático
+### 005: Dados de Teste
+Inserção de dados de exemplo para desenvolvimento.
+
+### 006: Tabela Users
+Criação da tabela de usuários para autenticação.
+
+### 007: Correção de Senhas
+Correção inicial dos hashes de senha.
+
+### 008: Upsert de Usuários
+Atualização idempotente dos usuários demo.
+
+### 009: Atualização de Hashes
+Correção final dos hashes de senha para produção.

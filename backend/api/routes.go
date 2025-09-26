@@ -488,7 +488,7 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 Data Importer API</h1>
+            <h1>Data Importer API</h1>
             <p>Desafio Técnico - Full Stack Developer</p>
             <span class="status">✅ Online</span>
         </div>
@@ -499,24 +499,24 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
             
             <div class="features">
                 <div class="feature">
-                    <h3>🔧 Backend</h3>
+                    <h3>Backend</h3>
                     <p>API REST em Go com PostgreSQL, autenticação JWT, e processamento de arquivos Excel/CSV.</p>
                 </div>
                 <div class="feature">
-                    <h3>🎨 Frontend</h3>
+                    <h3>Frontend</h3>
                     <p>Interface React com dashboard, relatórios e upload de arquivos.</p>
                 </div>
                 <div class="feature">
-                    <h3>📊 Relatórios</h3>
+                    <h3>Relatórios</h3>
                     <p>Análise de faturamento por mês, produto e parceiro com visualizações interativas.</p>
                 </div>
                 <div class="feature">
-                    <h3>🔐 Segurança</h3>
+                    <h3>Segurança</h3>
                     <p>Autenticação JWT, validação de dados e tratamento de erros robusto.</p>
                 </div>
             </div>
             
-            <h3>🛠️ Stack Tecnológica</h3>
+            <h3>Stack Tecnológica</h3>
             <div class="tech-stack">
                 <span class="tech">Go (Golang)</span>
                 <span class="tech">PostgreSQL</span>
@@ -531,10 +531,10 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
         </div>
         
         <div class="card">
-            <h2>🚀 Acesso Rápido</h2>
+            <h2>Acesso Rápido</h2>
             <div style="text-align: center; margin: 30px 0;">
                 <a href="https://data-importer-api-go.vercel.app/" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 1.1rem; margin: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.3s ease;">
-                    🎨 Acessar Frontend
+                     Acessar Frontend
                 </a>
                 <a href="https://data-importer-api-go.onrender.com/health" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 1.1rem; margin: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.3s ease;">
                     🔍 Health Check
@@ -543,9 +543,9 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
         </div>
         
         <div class="card">
-            <h2>🔑 Credenciais de Teste</h2>
+            <h2>Credenciais de Teste</h2>
             <div class="credentials">
-                <h3>👤 Usuários Disponíveis</h3>
+                <h3>Usuários Disponíveis</h3>
                 <table class="cred-table">
                     <thead>
                         <tr>
@@ -576,9 +576,9 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
         </div>
         
         <div class="card">
-            <h2>🌐 Endpoints da API</h2>
+            <h2>Endpoints da API</h2>
             
-            <h3>🔓 Endpoints Públicos</h3>
+            <h3>Endpoints Públicos</h3>
             <div class="endpoint">
                 <span class="method get">GET</span> <strong>/</strong> - Página inicial da API
             </div>
@@ -589,7 +589,7 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
                 <span class="method post">POST</span> <strong>/auth/login</strong> - Autenticação de usuário
             </div>
             
-            <h3>🔒 Endpoints Protegidos (Requer Autenticação)</h3>
+            <h3>Endpoints Protegidos (Requer Autenticação)</h3>
             <div class="endpoint">
                 <span class="method get">GET</span> <strong>/api/customers</strong> - Listar todos os clientes
             </div>
@@ -611,25 +611,25 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
         </div>
         
         <div class="card">
-            <h2>🌐 URLs de Produção</h2>
+            <h2>URLs de Produção</h2>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
                 <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; border-left: 4px solid #2196F3;">
-                    <h3 style="color: #1976D2; margin-bottom: 10px;">🎨 Frontend</h3>
+                    <h3 style="color: #1976D2; margin-bottom: 10px;">Frontend</h3>
                     <p><strong>URL:</strong> <a href="https://data-importer-api-go.vercel.app/" target="_blank" style="color: #1976D2; text-decoration: none;">https://data-importer-api-go.vercel.app/</a></p>
                     <p><strong>Plataforma:</strong> Vercel</p>
-                    <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">✅ Online</span></p>
+                    <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;"> Online</span></p>
                 </div>
                 <div style="background: #f3e5f5; padding: 20px; border-radius: 10px; border-left: 4px solid #9C27B0;">
                     <h3 style="color: #7B1FA2; margin-bottom: 10px;">🔧 Backend API</h3>
                     <p><strong>URL:</strong> <a href="https://data-importer-api-go.onrender.com/" target="_blank" style="color: #7B1FA2; text-decoration: none;">https://data-importer-api-go.onrender.com/</a></p>
                     <p><strong>Plataforma:</strong> Render</p>
-                    <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">✅ Online</span></p>
+                    <p><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;"> Online</span></p>
                 </div>
             </div>
         </div>
         
         <div class="card">
-            <h2>📚 Documentação e Recursos</h2>
+            <h2> Documentação e Recursos</h2>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 20px 0;">
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 3px solid #667eea;">
                     <h4 style="color: #667eea; margin-bottom: 8px;">📖 Repositório</h4>
@@ -644,7 +644,7 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
                     <p>Docker & Docker Compose</p>
                 </div>
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 3px solid #667eea;">
-                    <h4 style="color: #667eea; margin-bottom: 8px;">🚀 Deploy</h4>
+                    <h4 style="color: #667eea; margin-bottom: 8px;"> Deploy</h4>
                     <p>CI/CD Automático</p>
                 </div>
             </div>
@@ -652,7 +652,7 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
         
         <div class="footer">
             <p>Desenvolvido por Gabriel - Desafio Técnico Full Stack</p>
-            <p>API Version 1.0.0 | Status: Online ✅</p>
+            <p>API Version 1.0.0 | Status: Online </p>
         </div>
     </div>
 </body>

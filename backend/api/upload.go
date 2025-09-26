@@ -191,14 +191,21 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 		return s
 	}
 	alias := map[string]string{
+		// Partner fields
 		"partnerid":              "partner_id",
 		"partnername":            "partner_name",
 		"mpnid":                  "mpn_id",
 		"tier2mpnid":             "tier2_mpn_id",
+		"tier2mpn":               "tier2_mpn_id",
+		
+		// Customer fields
 		"customerid":             "customer_id",
 		"customername":           "customer_name",
 		"customerdomainname":     "customer_domain_name",
 		"customercountry":        "country",
+		"customerdomain":         "customer_domain_name",
+		
+		// Product fields
 		"productid":              "product_id",
 		"skuid":                  "sku_id",
 		"skuname":                "sku_name",
@@ -207,7 +214,12 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 		"metercategory":          "category",
 		"metersubcategory":       "sub_category",
 		"unit":                   "unit_type",
+		"unittype":               "unit_type",
 		"resourcelocation":       "resource_location",
+		"category":               "category",
+		"subcategory":            "sub_category",
+		
+		// Usage fields
 		"invoicenumber":          "invoice_number",
 		"usagedate":              "usage_date",
 		"chargestartdate":        "charge_start_date",

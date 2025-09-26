@@ -2,63 +2,42 @@
 
 ## Pré-requisitos
 
-### 1. Go 1.21+
+### Go 1.21+
 ```bash
-# Verificar versão do Go
 go version
-
-# Se não tiver instalado, baixe em: https://golang.org/dl/
+# Download: https://golang.org/dl/
 ```
 
-### 2. Node.js 16+
+### Node.js 16+
 ```bash
-# Verificar versão do Node
 node --version
 npm --version
-
-# Se não tiver instalado, baixe em: https://nodejs.org/
+# Download: https://nodejs.org/
 ```
 
-### 3. PostgreSQL 15+
+### PostgreSQL 15+
 ```bash
-# Verificar se PostgreSQL está instalado
 psql --version
-
-# Se não tiver instalado:
 # Windows: https://www.postgresql.org/download/windows/
 # macOS: brew install postgresql
 # Ubuntu: sudo apt install postgresql postgresql-contrib
 ```
 
-## Configuração do Banco de Dados
+## Configuração do Banco
 
-### 1. Criar Banco de Dados
+### Criar Banco de Dados
 ```bash
-# Conectar ao PostgreSQL
 psql -U postgres
-
-# Criar banco de dados
 CREATE DATABASE data_importer;
-
-# Criar usuário (opcional)
-CREATE USER data_user WITH PASSWORD 'password';
-GRANT ALL PRIVILEGES ON DATABASE data_importer TO data_user;
-
-# Sair do psql
 \q
 ```
 
-### 2. Configurar Variáveis de Ambiente
+### Variáveis de Ambiente
 ```bash
 # Windows (PowerShell)
 $env:DATABASE_URL="postgres://postgres:password@localhost:5432/data_importer?sslmode=disable"
 $env:JWT_SECRET="sua-chave-secreta-super-segura-aqui"
 $env:PORT="8080"
-
-# Windows (CMD)
-set DATABASE_URL=postgres://postgres:password@localhost:5432/data_importer?sslmode=disable
-set JWT_SECRET=sua-chave-secreta-super-segura-aqui
-set PORT=8080
 
 # Linux/Mac
 export DATABASE_URL="postgres://postgres:password@localhost:5432/data_importer?sslmode=disable"
@@ -68,29 +47,14 @@ export PORT="8080"
 
 ## Execução do Backend
 
-### 1. Instalar Dependências
+### Instalar Dependências
 ```bash
 cd backend
-
-# Instalar dependências Go
 go mod tidy
-
-# Instalar golang-migrate (para migrations)
-go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 ```
 
-### 2. Executar Migrations
+### Executar API
 ```bash
-# Executar migrations
-migrate -path ./db/migrations -database "postgres://postgres:password@localhost:5432/data_importer?sslmode=disable" up
-
-# Verificar se as tabelas foram criadas
-psql -U postgres -d data_importer -c "\dt"
-```
-
-### 3. Iniciar API
-```bash
-# Executar API
 go run ./cmd/main.go
 ```
 
@@ -109,69 +73,62 @@ Endpoints disponíveis:
 
 ## Execução do Frontend
 
-### 1. Instalar Dependências
+### Instalar Dependências
 ```bash
 cd frontend
-
-# Instalar dependências Node.js
 npm install
 ```
 
-### 2. Iniciar Frontend
+### Iniciar Frontend
 ```bash
-# Executar em modo desenvolvimento
 npm start
 ```
 
 **Saída esperada:**
 ```
 Compiled successfully!
-
 You can now view data-importer-frontend in the browser.
-
   Local:            http://localhost:3000
   On Your Network:  http://192.168.1.100:3000
 ```
 
 ## Importação de Dados
 
-### 1. Importar Dados de Exemplo (CSV)
+### Via Interface Web
+1. Acesse http://localhost:3000
+2. Faça login (admin/admin123)
+3. Vá para Upload
+4. Selecione arquivo Excel/CSV
+5. Aguarde processamento
+
+### Via CLI
 ```bash
 cd backend
 
-# Importar dados CSV de exemplo
-go run ./cmd/importer/main.go ../sample_data.csv
+# CSV
+go run ./cmd/importer/main.go ../dados.csv
+
+# Excel
+go run ./cmd/importer/excel_importer.go ../dados.xlsx
 ```
 
-### 2. Importar Arquivo Excel
+## Verificação
+
+### Testar API
 ```bash
-cd backend
-
-# Importar arquivo Excel fornecido
-go run ./cmd/importer/excel_importer.go ../Reconfile\ fornecedores.xlsx
-```
-
-## Verificação do Sistema
-
-### 1. Testar API
-```bash
-# Testar autenticação
+# Login
 curl -X POST http://localhost:8080/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "admin", "password": "admin123"}'
 
-# Testar endpoint protegido (usar token retornado)
+# Usar token retornado
 curl -X GET http://localhost:8080/api/customers \
-  -H "Authorization: Bearer <seu_token>"
+  -H "Authorization: Bearer <token>"
 ```
 
-### 2. Verificar Banco de Dados
+### Verificar Banco
 ```bash
-# Conectar ao banco
 psql -U postgres -d data_importer
-
-# Verificar tabelas
-\dt
 
 # Contar registros
 SELECT 'partners' as tabela, COUNT(*) as registros FROM partners
@@ -182,19 +139,17 @@ SELECT 'products', COUNT(*) FROM products
 UNION ALL
 SELECT 'usages', COUNT(*) FROM usages;
 
-# Sair
 \q
 ```
 
-### 3. Acessar Frontend
-- Abrir navegador em: http://localhost:3000
-- Fazer login com: admin / admin123
+### Acessar Frontend
+- URL: http://localhost:3000
+- Login: admin / admin123
 
 ## Troubleshooting
 
-### Erro: "connection refused" (PostgreSQL)
+### PostgreSQL não inicia
 ```bash
-# Verificar se PostgreSQL está rodando
 # Windows
 net start postgresql-x64-15
 
@@ -205,75 +160,51 @@ brew services start postgresql
 sudo systemctl start postgresql
 ```
 
-### Erro: "database does not exist"
+### Banco não existe
 ```bash
-# Criar banco de dados
 psql -U postgres -c "CREATE DATABASE data_importer;"
 ```
 
-### Erro: "migrate: command not found"
+### Porta em uso
 ```bash
-# Instalar golang-migrate
-go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+# Windows
+netstat -ano | findstr :8080
+taskkill /PID <PID> /F
 
-# Adicionar ao PATH (se necessário)
-export PATH=$PATH:$(go env GOPATH)/bin
+# Linux/Mac
+lsof -i :8080
+kill -9 <PID>
 ```
 
-### Erro: "module not found" (Go)
+### Dependências Go
 ```bash
-# Limpar cache e reinstalar
 go clean -modcache
 go mod download
 go mod tidy
 ```
 
-### Erro: "npm install failed" (Node.js)
+### Dependências Node
 ```bash
-# Limpar cache e reinstalar
 npm cache clean --force
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-### Erro: "port already in use"
-```bash
-# Verificar processos usando a porta
-# Windows
-netstat -ano | findstr :8080
-netstat -ano | findstr :3000
-
-# Linux/Mac
-lsof -i :8080
-lsof -i :3000
-
-# Matar processo (substitua PID)
-# Windows
-taskkill /PID <PID> /F
-
-# Linux/Mac
-kill -9 <PID>
-```
-
-## Estrutura de Arquivos Local
+## Estrutura Local
 
 ```
 data-importer-api-go/
 ├── backend/                    # API Golang
-│   ├── cmd/
-│   │   ├── main.go            # Servidor principal
-│   │   └── importer/          # Importadores
+│   ├── cmd/                   # Aplicações
 │   ├── internal/              # Código interno
 │   ├── api/                   # Handlers HTTP
 │   ├── db/migrations/         # Migrations SQL
-│   └── go.mod                 # Dependências Go
-├── frontend/                   # React App
+│   └── go.mod
+├── frontend/                  # React App
 │   ├── src/                   # Código fonte
 │   ├── public/                # Arquivos públicos
-│   └── package.json           # Dependências Node.js
+│   └── package.json
 ├── docs/                      # Documentação
-├── sample_data.csv            # Dados de exemplo
-├── Reconfile fornecedores.xlsx # Arquivo Excel fornecido
 └── README.md
 ```
 
@@ -281,57 +212,25 @@ data-importer-api-go/
 
 ### Backend
 ```bash
-# Executar API
-go run ./cmd/main.go
-
-# Executar importador CSV
-go run ./cmd/importer/main.go ../sample_data.csv
-
-# Executar importador Excel
-go run ./cmd/importer/excel_importer.go ../Reconfile\ fornecedores.xlsx
-
-# Executar testes
-go test ./...
-
-# Build para produção
-go build -o api ./cmd/main.go
+go run ./cmd/main.go                    # Executar API
+go run ./cmd/importer/main.go dados.csv # Importar CSV
+go test ./...                           # Executar testes
+go build -o api ./cmd/main.go          # Build produção
 ```
 
 ### Frontend
 ```bash
-# Executar em desenvolvimento
-npm start
-
-# Build para produção
-npm run build
-
-# Executar testes
-npm test
-
-# Instalar dependências
-npm install
+npm start          # Desenvolvimento
+npm run build      # Build produção
+npm test           # Executar testes
+npm install        # Instalar dependências
 ```
 
-### Banco de Dados
+### Banco
 ```bash
 # Executar migrations
 migrate -path ./db/migrations -database "postgres://postgres:password@localhost:5432/data_importer?sslmode=disable" up
 
 # Reverter migrations
 migrate -path ./db/migrations -database "postgres://postgres:password@localhost:5432/data_importer?sslmode=disable" down
-
-# Verificar status das migrations
-migrate -path ./db/migrations -database "postgres://postgres:password@localhost:5432/data_importer?sslmode=disable" version
 ```
-
-## Próximos Passos
-
-1. **Executar Backend**: `go run ./cmd/main.go`
-2. **Executar Frontend**: `npm start`
-3. **Importar Dados**: Usar importadores CSV ou Excel
-4. **Acessar Sistema**: http://localhost:3000
-5. **Testar API**: http://localhost:8080
-
----
-
-Sistema funcionando localmente!
