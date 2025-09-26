@@ -40,14 +40,14 @@ func main() {
 		log.Fatalf("Erro ao executar migrations: %v", err)
 	}
 
-	// Carregar dados iniciais se não existirem
-	if err := loadInitialData(svc); err != nil {
-		log.Printf("⚠️  Aviso: Não foi possível carregar dados iniciais: %v", err)
-	}
-
 	// Inicializar camadas
 	repo := repository.NewRepository(db)
 	svc := service.NewService(repo)
+
+	// Carregar dados iniciais se não existirem (não deve encerrar a API em caso de erro)
+	if err := loadInitialData(svc); err != nil {
+		log.Printf("⚠️  Aviso: Não foi possível carregar dados iniciais: %v", err)
+	}
 	handler := api.NewHandler(svc)
 
 	// Configurar rotas
@@ -95,7 +95,15 @@ func main() {
 	log.Println("Servidor parado com sucesso")
 }
 
-func loadInitialData(svc *service.Service) error {
+func loadInitialData(svc *service.Service) (err error) {
+	// Proteger contra panics para não derrubar o servidor
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("⚠️  Panic ao carregar dados iniciais: %v", r)
+			err = fmt.Errorf("panic ao carregar dados iniciais")
+		}
+	}()
+
 	// Verificar se já existem dados no banco
 	ctx := context.Background()
 	customers, err := svc.GetAllCustomers(ctx)

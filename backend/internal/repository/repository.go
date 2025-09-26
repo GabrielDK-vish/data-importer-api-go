@@ -348,3 +348,33 @@ func (r *Repository) ClearAllData(ctx context.Context) error {
 	
 	return nil
 }
+
+// GetUserByUsername busca um usuário pelo username
+func (r *Repository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+	query := `
+		SELECT id, username, password_hash, email, full_name, is_active, created_at, updated_at
+		FROM users
+		WHERE username = $1 AND is_active = true
+	`
+	
+	var user models.User
+	err := r.db.QueryRow(ctx, query, username).Scan(
+		&user.ID,
+		&user.Username,
+		&user.PasswordHash,
+		&user.Email,
+		&user.FullName,
+		&user.IsActive,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil // Usuário não encontrado
+		}
+		return nil, fmt.Errorf("erro ao buscar usuário: %w", err)
+	}
+	
+	return &user, nil
+}

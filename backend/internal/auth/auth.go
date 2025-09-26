@@ -2,12 +2,21 @@ package auth
 
 import (
 	"errors"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte("sua-chave-secreta-super-segura-aqui") // Em produção, use uma chave mais segura
+var jwtSecret = []byte(getJWTSecret())
+
+func getJWTSecret() string {
+	if s := os.Getenv("JWT_SECRET"); s != "" {
+		return s
+	}
+	// fallback para compatibilidade local
+	return "sua-chave-secreta-super-segura-aqui"
+}
 
 // Claims representa as claims do JWT
 type Claims struct {
@@ -56,10 +65,11 @@ func ValidateToken(tokenString string) (*Claims, error) {
 	return claims, nil
 }
 
-// ValidateCredentials valida credenciais de login (hardcoded para demo)
+// ValidateCredentials valida credenciais de login (DEPRECATED - usar service.ValidateUserCredentials)
+// Mantido para compatibilidade, mas não deve ser usado
 func ValidateCredentials(username, password string) bool {
-	// Para demo, vamos usar credenciais hardcoded
-	// Em produção, isso deveria consultar um banco de dados
+	// Esta função está deprecated - use service.ValidateUserCredentials
+	// Mantida apenas para compatibilidade
 	validUsers := map[string]string{
 		"admin": "admin123",
 		"user":  "user123",

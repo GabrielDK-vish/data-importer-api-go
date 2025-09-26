@@ -93,6 +93,18 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+// User representa um usuário do sistema
+type User struct {
+	ID           int       `json:"id" db:"id"`
+	Username     string    `json:"username" db:"username"`
+	PasswordHash string    `json:"-" db:"password_hash"`
+	Email        string    `json:"email" db:"email"`
+	FullName     string    `json:"full_name" db:"full_name"`
+	IsActive     bool      `json:"is_active" db:"is_active"`
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
+}
+
 // LoginResponse representa a resposta de login
 type LoginResponse struct {
 	Token string `json:"token"`

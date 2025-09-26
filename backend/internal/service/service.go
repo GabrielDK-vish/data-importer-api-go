@@ -5,6 +5,8 @@ import (
 	"data-importer-api-go/internal/models"
 	"data-importer-api-go/internal/repository"
 	"fmt"
+	
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
@@ -110,4 +112,29 @@ func (s *Service) ProcessImportDataWithReplace(ctx context.Context, partners []m
 
 	// Processar dados normalmente
 	return s.ProcessImportData(ctx, partners, customers, products, usages)
+}
+
+// ValidateUserCredentials valida credenciais de usuário no banco de dados
+func (s *Service) ValidateUserCredentials(ctx context.Context, username, password string) (*models.User, error) {
+	user, err := s.repo.GetUserByUsername(ctx, username)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar usuário: %w", err)
+	}
+	
+	if user == nil {
+		return nil, fmt.Errorf("usuário não encontrado")
+	}
+	
+	// Verificar senha usando bcrypt
+	if err := s.comparePassword(password, user.PasswordHash); err != nil {
+		return nil, fmt.Errorf("senha inválida")
+	}
+	
+	return user, nil
+}
+
+// comparePassword compara senha em texto plano com hash bcrypt
+func (s *Service) comparePassword(password, hash string) error {
+	// Importar bcrypt no topo do arquivo
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }

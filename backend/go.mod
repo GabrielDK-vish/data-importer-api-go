@@ -10,6 +10,7 @@ require (
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/joho/godotenv v1.4.0
 	github.com/xuri/excelize/v2 v2.8.0
+	golang.org/x/crypto v0.15.0
 )
 
 require (

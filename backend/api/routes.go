@@ -74,8 +74,9 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validar credenciais
-	if !auth.ValidateCredentials(loginReq.Username, loginReq.Password) {
+	// Validar credenciais no banco de dados
+	user, err := h.service.ValidateUserCredentials(r.Context(), loginReq.Username, loginReq.Password)
+	if err != nil {
 		http.Error(w, "Credenciais inválidas", http.StatusUnauthorized)
 		return
 	}
@@ -89,7 +90,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	response := models.LoginResponse{
 		Token: token,
-		User:  loginReq.Username,
+		User:  user.Username,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
