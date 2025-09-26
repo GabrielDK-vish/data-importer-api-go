@@ -476,14 +476,15 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 
 	// Criar Product
 	product := &models.Product{
-		ProductID:   getValue("product_id"),
-		SkuID:       getValue("sku_id"),
-		SkuName:     getValue("sku_name"),
-		ProductName: getValue("product_name"),
-		MeterType:   getValue("meter_type"),
-		Category:    getValue("category"),
-		SubCategory: getValue("sub_category"),
-		UnitType:    getValue("unit_type"),
+		ProductID:       getValue("product_id"),
+		SkuID:           getValue("sku_id"),
+		SkuName:         getValue("sku_name"),
+		ProductName:     getValue("product_name"),
+		MeterType:       getValue("meter_type"),
+		Category:        getValue("category"),
+		SubCategory:     getValue("sub_category"),
+		UnitType:        getValue("unit_type"),
+		ResourceLocation: getValue("resource_location"),
 	}
 
 	// Validar campos obrigatórios
@@ -536,7 +537,7 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 		Tags:               getValue("tags"),
 		BenefitType:        getValue("benefit_type"),
 		PartnerID:          0, 
-		CustomerID:         0, // Será preenchido após inserçã
+		CustomerID:         0, // Será preenchido após inserção
 		ProductID:          0, 
 	}
 
