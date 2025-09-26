@@ -285,8 +285,14 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 	customerMap := make(map[string]*models.Customer)
 	productMap := make(map[string]*models.Product)
 
-	// Processar linhas de dados
-	for i := 1; i < len(rows); i++ {
+	// Processar linhas de dados (limitar a 100 linhas para teste)
+	maxRows := len(rows)
+	if maxRows > 101 { // 1 cabeçalho + 100 linhas
+		maxRows = 101
+		log.Printf("⚠️  Limitando processamento a %d linhas para teste", maxRows-1)
+	}
+	
+	for i := 1; i < maxRows; i++ {
 		record := rows[i]
 		
 		// Pular linhas vazias
