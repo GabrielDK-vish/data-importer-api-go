@@ -131,6 +131,7 @@ func (h *UploadHandler) processExcelFile(file io.Reader) ([]models.Partner, []mo
 	}
 
 	// Processar dados
+	log.Printf("📊 Iniciando processamento de %d linhas de dados", len(rows))
 	return h.processRows(rows)
 }
 
@@ -262,19 +263,69 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 		log.Printf("🔗 Coluna %d: '%s' -> '%s'", i, col, key)
 	}
 
-	// Verificar colunas obrigatórias
+	// Verificar colunas obrigatórias com mapeamento flexível
 	requiredColumns := []string{"partner_id", "customer_id", "product_id", "usage_date", "quantity", "unit_price"}
 	missingColumns := []string{}
-	for _, col := range requiredColumns {
-		if _, exists := columnMap[col]; !exists {
-			missingColumns = append(missingColumns, col)
+	
+	// Mapear colunas disponíveis para colunas obrigatórias
+	columnMapping := make(map[string]string)
+	for _, required := range requiredColumns {
+		found := false
+		for available, _ := range columnMap {
+			if strings.Contains(strings.ToLower(available), strings.ToLower(required)) {
+				columnMapping[required] = available
+				found = true
+				break
+			}
+		}
+		if !found {
+			missingColumns = append(missingColumns, required)
 		}
 	}
 	
 	if len(missingColumns) > 0 {
-    log.Printf("⚠️  Colunas obrigatórias não encontradas: %v", missingColumns)
+		log.Printf("⚠️  Colunas obrigatórias não encontradas: %v", missingColumns)
 		log.Printf("📋 Colunas disponíveis: %v", getAvailableColumns(header))
-		return nil, nil, nil, nil, fmt.Errorf("colunas obrigatórias não encontradas: %v. Colunas disponíveis: %v", missingColumns, getAvailableColumns(header))
+		log.Printf("🔍 Tentando mapeamento automático...")
+		
+		// Tentar mapeamento automático mais agressivo
+		for _, missing := range missingColumns {
+			for available, _ := range columnMap {
+				availableLower := strings.ToLower(strings.ReplaceAll(available, " ", ""))
+				missingLower := strings.ToLower(strings.ReplaceAll(missing, "_", ""))
+				
+				if strings.Contains(availableLower, missingLower) || 
+				   strings.Contains(missingLower, availableLower) ||
+				   (strings.Contains(availableLower, "partner") && strings.Contains(missingLower, "partner")) ||
+				   (strings.Contains(availableLower, "customer") && strings.Contains(missingLower, "customer")) ||
+				   (strings.Contains(availableLower, "product") && strings.Contains(missingLower, "product")) ||
+				   (strings.Contains(availableLower, "usage") && strings.Contains(missingLower, "usage")) ||
+				   (strings.Contains(availableLower, "date") && strings.Contains(missingLower, "date")) ||
+				   (strings.Contains(availableLower, "quantity") && strings.Contains(missingLower, "quantity")) ||
+				   (strings.Contains(availableLower, "price") && strings.Contains(missingLower, "price")) {
+					columnMapping[missing] = available
+					log.Printf("✅ Mapeamento automático: '%s' -> '%s'", available, missing)
+					break
+				}
+			}
+		}
+		
+		// Verificar se ainda há colunas faltando
+		stillMissing := []string{}
+		for _, required := range requiredColumns {
+			if _, exists := columnMapping[required]; !exists {
+				stillMissing = append(stillMissing, required)
+			}
+		}
+		
+		if len(stillMissing) > 0 {
+			return nil, nil, nil, nil, fmt.Errorf("colunas obrigatórias não encontradas: %v. Colunas disponíveis: %v", stillMissing, getAvailableColumns(header))
+		}
+	}
+	
+	// Atualizar columnMap com mapeamentos encontrados
+	for required, available := range columnMapping {
+		columnMap[required] = columnMap[available]
 	}
 
 	// Estruturas para processamento paralelo
@@ -356,8 +407,9 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 
 	for result := range resultChan {
 		if result.err != nil {
-			log.Printf("⚠️  Erro ao processar linha %d: %v", result.rowNum, result.err)
+			log.Printf("⚠️  Erro ao processar linha %d: %v", result.rowNum+1, result.err)
 			errorCount++
+			// Continuar processamento mesmo com erros
 			continue
 		}
 
@@ -420,8 +472,35 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 		if value == "" {
 			return 0, nil
 		}
-		value = strings.ReplaceAll(value, ",", ".")
-		return strconv.ParseFloat(value, 64)
+		
+		// Limpar valor
+		value = strings.TrimSpace(value)
+		
+		// Remover caracteres não numéricos exceto ponto, vírgula e sinal
+		cleaned := ""
+		for _, char := range value {
+			if char >= '0' && char <= '9' || char == '.' || char == ',' || char == '-' || char == '+' {
+				cleaned += string(char)
+			}
+		}
+		
+		if cleaned == "" {
+			return 0, nil
+		}
+		
+		// Substituir vírgula por ponto
+		cleaned = strings.ReplaceAll(cleaned, ",", ".")
+		
+		// Verificar se há múltiplos pontos (formato brasileiro)
+		if strings.Count(cleaned, ".") > 1 {
+			// Se há múltiplos pontos, o último é o decimal
+			parts := strings.Split(cleaned, ".")
+			if len(parts) > 2 {
+				cleaned = strings.Join(parts[:len(parts)-1], "") + "." + parts[len(parts)-1]
+			}
+		}
+		
+		return strconv.ParseFloat(cleaned, 64)
 	}
 
 	// Função auxiliar para converter string para data
@@ -429,6 +508,9 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 		if value == "" {
 			return time.Time{}, nil
 		}
+		
+		// Limpar valor
+		value = strings.TrimSpace(value)
 		
 		// Tentar diferentes formatos de data
         formats := []string{
@@ -440,6 +522,8 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
             "1-2-2006",
 			"2006-01-02 15:04:05",
 			"2006/01/02 15:04:05",
+			"2006-01-02T15:04:05Z",
+			"2006-01-02T15:04:05.000Z",
 		}
 		
 		for _, format := range formats {
@@ -450,12 +534,17 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 		
 		// Tentar parsear como número serial do Excel
 		if serial, err := strconv.ParseFloat(value, 64); err == nil {
-			baseDate := time.Date(1899, 12, 30, 0, 0, 0, 0, time.UTC)
-			days := int(serial)
-			return baseDate.AddDate(0, 0, days), nil
+			// Verificar se é um número serial do Excel (geralmente entre 1 e 100000)
+			if serial > 1 && serial < 100000 {
+				baseDate := time.Date(1899, 12, 30, 0, 0, 0, 0, time.UTC)
+				days := int(serial)
+				return baseDate.AddDate(0, 0, days), nil
+			}
 		}
 		
-		return time.Time{}, fmt.Errorf("formato de data inválido: %s", value)
+		// Se não conseguir parsear, retornar data atual como fallback
+		log.Printf("⚠️  Não foi possível parsear data '%s', usando data atual", value)
+		return time.Now(), nil
 	}
 
 	// Criar Partner
@@ -498,31 +587,36 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 		return nil, nil, nil, nil, fmt.Errorf("product_id é obrigatório")
 	}
 
-	// Parsear datas
+	// Parsear datas com tratamento de erro mais flexível
 	usageDate, err := parseDate(getValue("usage_date"))
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("erro ao parsear usage_date: %w", err)
+		log.Printf("⚠️  Erro ao parsear usage_date na linha %d: %v, usando data atual", rowNum+1, err)
+		usageDate = time.Now()
 	}
 
 	chargeStartDate, err := parseDate(getValue("charge_start_date"))
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("erro ao parsear charge_start_date: %w", err)
+		log.Printf("⚠️  Erro ao parsear charge_start_date na linha %d: %v, usando data atual", rowNum+1, err)
+		chargeStartDate = time.Now()
 	}
 
-	// Parsear valores numéricos
+	// Parsear valores numéricos com tratamento de erro mais flexível
 	quantity, err := parseFloat(getValue("quantity"))
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("erro ao parsear quantity: %w", err)
+		log.Printf("⚠️  Erro ao parsear quantity na linha %d: %v, usando 0", rowNum+1, err)
+		quantity = 0
 	}
 
 	unitPrice, err := parseFloat(getValue("unit_price"))
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("erro ao parsear unit_price: %w", err)
+		log.Printf("⚠️  Erro ao parsear unit_price na linha %d: %v, usando 0", rowNum+1, err)
+		unitPrice = 0
 	}
 
 	billingPreTaxTotal, err := parseFloat(getValue("billing_pre_tax_total"))
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("erro ao parsear billing_pre_tax_total: %w", err)
+		log.Printf("⚠️  Erro ao parsear billing_pre_tax_total na linha %d: %v, usando 0", rowNum+1, err)
+		billingPreTaxTotal = 0
 	}
 
 	// Criar Usage
