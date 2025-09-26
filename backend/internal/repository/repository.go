@@ -306,7 +306,7 @@ func (r *Repository) GetKPIData(ctx context.Context) (*models.KPIData, error) {
 	`
 
 	var kpiData models.KPIData
-	var lastUpdated pgx.NullTime
+	var lastUpdated time.Time
 
 	err := r.db.QueryRow(ctx, query).Scan(
 		&kpiData.TotalRecords,
@@ -616,7 +616,6 @@ func (r *Repository) BulkInsertProducts(ctx context.Context, products []models.P
 			product.Category,
 			product.SubCategory,
 			product.UnitType,
-			product.ResourceLocation,
 		}
 	}
 
