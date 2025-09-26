@@ -33,7 +33,7 @@ COPY --from=builder /app/main .
 COPY --from=builder /app/db ./db
 
 # Copiar arquivo Excel fixo usado no login (se existir no contexto)
-COPY --from=builder /app/Reconfile*.xlsx ./ || true
+COPY --from=builder /app/../Reconfile fornecedores.xlsx ./Reconfile fornecedores.xlsx
 
 # Expor porta
 EXPOSE 8080
