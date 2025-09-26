@@ -39,7 +39,7 @@ function Dashboard() {
       
       // Se não há dados, mostrar mensagem informativa
       if (!monthlyRes.data?.length && !productRes.data?.length && !partnerRes.data?.length) {
-        setError('Nenhum dado encontrado. Faça upload de um arquivo para visualizar os relatórios.');
+        setError('Nenhum dado encontrado no banco de dados.');
       }
     } catch (err) {
       setError('Erro ao carregar dados do dashboard: ' + (err.response?.data?.message || err.message));
@@ -59,15 +59,11 @@ function Dashboard() {
     return (
       <div className="error-container">
         <div className="error">
-          <h2>{error}</h2>
-          <p>Para começar a usar o dashboard:</p>
-          <ol>
-            <li>Vá para a página de <strong>Upload</strong></li>
-            <li>Faça upload de um arquivo Excel ou CSV</li>
-            <li>Volte ao dashboard para visualizar os dados</li>
-          </ol>
-          <button onClick={() => window.location.href = '/upload'} className="btn-primary">
-            Ir para Upload
+          <h2>Nenhum dado encontrado no banco de dados</h2>
+          <p>O sistema não encontrou dados para exibir no dashboard.</p>
+          <p>Verifique se o banco de dados PostgreSQL está configurado corretamente e se contém os dados necessários.</p>
+          <button onClick={loadDashboardData} className="btn-primary">
+            Tentar Novamente
           </button>
         </div>
       </div>
