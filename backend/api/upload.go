@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -129,29 +130,50 @@ func (h *UploadHandler) processExcelFile(file io.Reader) ([]models.Partner, []mo
 }
 
 func (h *UploadHandler) processCSVFile(file io.Reader) ([]models.Partner, []models.Customer, []models.Product, []models.Usage, error) {
-	// Ler arquivo CSV
-	reader := csv.NewReader(file)
-	reader.Comma = ','
-	reader.LazyQuotes = true
+	// Ler todo o conteúdo para detectar delimitador
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("erro ao ler arquivo: %w", err)
+	}
 
-	// Ler todas as linhas
-	var rows [][]string
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
-			break
+	content := string(data)
+	delimiter := ','
+	// Heurística simples: se houver mais tabs do que vírgulas na primeira linha, usar tab
+	firstLine := content
+	if idx := strings.IndexAny(content, "\r\n"); idx != -1 {
+		firstLine = content[:idx]
+	}
+	if strings.Count(firstLine, "\t") > strings.Count(firstLine, ",") {
+		delimiter = '\t'
+	}
+
+	parseWith := func(delim rune) ([][]string, error) {
+		reader := csv.NewReader(strings.NewReader(content))
+		reader.Comma = delim
+		reader.LazyQuotes = true
+		var rows [][]string
+		for {
+			record, err := reader.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return nil, fmt.Errorf("erro ao ler CSV: %w", err)
+			}
+			rows = append(rows, record)
 		}
-		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("erro ao ler CSV: %w", err)
-		}
-		rows = append(rows, record)
+		return rows, nil
+	}
+
+	rows, err := parseWith(delimiter)
+	if err != nil {
+		return nil, nil, nil, nil, err
 	}
 
 	if len(rows) < 2 {
 		return nil, nil, nil, nil, fmt.Errorf("CSV deve ter pelo menos 2 linhas")
 	}
 
-	// Processar dados
 	return h.processRows(rows)
 }
 
@@ -159,8 +181,66 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 	// Processar cabeçalho
 	header := rows[0]
 	columnMap := make(map[string]int)
+
+	// Normalizar cabeçalhos e aplicar aliases
+	normalize := func(s string) string {
+		s = strings.ToLower(strings.TrimSpace(s))
+		s = strings.ReplaceAll(s, " ", "")
+		s = strings.ReplaceAll(s, "_", "")
+		s = strings.ReplaceAll(s, "-", "")
+		return s
+	}
+	alias := map[string]string{
+		"partnerid":              "partner_id",
+		"partnername":            "partner_name",
+		"mpnid":                  "mpn_id",
+		"tier2mpnid":             "tier2_mpn_id",
+		"customerid":             "customer_id",
+		"customername":           "customer_name",
+		"customerdomainname":     "customer_domain_name",
+		"customercountry":        "country",
+		"productid":              "product_id",
+		"skuid":                  "sku_id",
+		"skuname":                "sku_name",
+		"productname":            "product_name",
+		"metertype":              "meter_type",
+		"metercategory":          "category",
+		"metersubcategory":       "sub_category",
+		"unit":                   "unit_type",
+		"resourcelocation":       "resource_location",
+		"invoicenumber":          "invoice_number",
+		"usagedate":              "usage_date",
+		"chargestartdate":        "charge_start_date",
+		"unitprice":              "unit_price",
+		"effectiveunitprice":     "unit_price",
+		"quantity":               "quantity",
+		"billingpretaxtotal":     "billing_pre_tax_total",
+		"billingcurrency":        "billing_currency",
+		"pricingpretaxtotal":     "pricing_pre_tax_total",
+		"pricingcurrency":        "pricing_currency",
+		"benefittype":            "benefit_type",
+		"tags":                   "tags",
+		"additionalinfo":         "additional_info",
+		"serviceinfo1":           "service_info1",
+		"serviceinfo2":           "service_info2",
+		"pcbcexchangerate":       "pc_to_bc_exchange_rate",
+		"pcbcexchangeratedate":   "pc_to_bc_exchange_rate_date",
+		"entitlementid":          "entitlement_id",
+		"entitlementdescription": "entitlement_description",
+		"partnerearnedcreditpercentage": "partner_earned_credit_percentage",
+		"creditpercentage":       "credit_percentage",
+		"credittype":             "credit_type",
+		"benefitorderid":         "benefit_order_id",
+		"benefitid":              "benefit_id",
+	}
+
 	for i, col := range header {
-		columnMap[strings.ToLower(strings.TrimSpace(col))] = i
+		n := normalize(col)
+		key := n
+		if mapped, ok := alias[n]; ok {
+			key = mapped
+		}
+		columnMap[key] = i
 	}
 
 	// Verificar colunas obrigatórias
@@ -173,7 +253,7 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 	}
 	
 	if len(missingColumns) > 0 {
-		log.Printf("⚠️  Colunas obrigatórias não encontradas: %v", missingColumns)
+    log.Printf("⚠️  Colunas obrigatórias não encontradas: %v", missingColumns)
 		log.Printf("📋 Colunas disponíveis: %v", getAvailableColumns(header))
 		return nil, nil, nil, nil, fmt.Errorf("colunas obrigatórias não encontradas: %v. Colunas disponíveis: %v", missingColumns, getAvailableColumns(header))
 	}
@@ -238,10 +318,10 @@ func (h *UploadHandler) allEmpty(record []string) bool {
 }
 
 func getAvailableColumns(header []string) []string {
-	columns := make([]string, len(header))
-	for i, col := range header {
-		columns[i] = strings.ToLower(strings.TrimSpace(col))
-	}
+    columns := make([]string, len(header))
+    for i, col := range header {
+        columns[i] = strings.ToLower(strings.TrimSpace(col))
+    }
 	return columns
 }
 
@@ -264,17 +344,19 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 	}
 
 	// Função auxiliar para converter string para data
-	parseDate := func(value string) (time.Time, error) {
+    parseDate := func(value string) (time.Time, error) {
 		if value == "" {
 			return time.Time{}, nil
 		}
 		
 		// Tentar diferentes formatos de data
-		formats := []string{
+        formats := []string{
 			"2006-01-02",
 			"2006/01/02",
 			"02/01/2006",
 			"02-01-2006",
+            "1/2/2006",
+            "1-2-2006",
 			"2006-01-02 15:04:05",
 			"2006/01/02 15:04:05",
 		}

@@ -117,14 +117,25 @@ func loadInitialData(svc *service.Service) (err error) {
 		return nil
 	}
 
-	// Tentar carregar arquivo Excel inicial
-	excelFile := "Reconfile fornecedores.xlsx"
-	if _, err := os.Stat(excelFile); os.IsNotExist(err) {
-		log.Printf("Arquivo %s não encontrado, pulando carregamento inicial", excelFile)
-		return nil
-	}
+    // Tentar localizar o arquivo Excel inicial em múltiplos caminhos
+    candidateFiles := []string{
+        "Reconfile fornecedores.xlsx",                 // diretório atual
+        "../Reconfile fornecedores.xlsx",              // raiz do repo
+        "/app/Reconfile fornecedores.xlsx",            // caminho no container
+    }
+    var excelFile string
+    for _, path := range candidateFiles {
+        if _, err := os.Stat(path); err == nil {
+            excelFile = path
+            break
+        }
+    }
+    if excelFile == "" {
+        log.Printf("Arquivo 'Reconfile fornecedores.xlsx' não encontrado em caminhos padrão, pulando carregamento inicial")
+        return nil
+    }
 
-	log.Printf("Carregando dados iniciais do arquivo: %s", excelFile)
+    log.Printf("Carregando dados iniciais do arquivo: %s", excelFile)
 	
 	// Usar o importador Excel existente
 	if err := processExcelFile(svc, excelFile); err != nil {

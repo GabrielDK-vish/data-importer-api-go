@@ -225,10 +225,11 @@ func (h *Handler) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	var usages []models.Usage
 
 	// Processar arquivo baseado na extensão
+	uploadHandler := NewUploadHandler(h.service)
 	if strings.HasSuffix(strings.ToLower(fileName), ".xlsx") {
-		partners, customers, products, usages, err = h.processExcelFile(file)
+		partners, customers, products, usages, err = uploadHandler.processExcelFile(file)
 	} else if strings.HasSuffix(strings.ToLower(fileName), ".csv") {
-		partners, customers, products, usages, err = h.processCSVFile(file)
+		partners, customers, products, usages, err = uploadHandler.processCSVFile(file)
 	} else {
 		http.Error(w, "Tipo de arquivo não suportado. Use .csv ou .xlsx", http.StatusBadRequest)
 		return
