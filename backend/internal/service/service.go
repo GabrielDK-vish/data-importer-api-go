@@ -67,29 +67,26 @@ func (s *Service) GetBillingByPartner(ctx context.Context) ([]models.BillingByPa
 	return reports, nil
 }
 
-// ProcessImportData processa dados de importação
+// ProcessImportData processa dados de importação com inserção em lote
 func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partner, customers []models.Customer, products []models.Product, usages []models.Usage) error {
-	// Inserir partners (ignorar duplicatas)
-	for _, partner := range partners {
-		if err := s.repo.InsertPartner(ctx, &partner); err != nil {
-			// Log do erro mas continua processamento se for duplicata
-			fmt.Printf("Aviso ao inserir parceiro %s: %v\n", partner.PartnerID, err)
+	// Inserir partners em lote (ignorar duplicatas)
+	if len(partners) > 0 {
+		if err := s.repo.BulkInsertPartners(ctx, partners); err != nil {
+			fmt.Printf("Aviso ao inserir parceiros em lote: %v\n", err)
 		}
 	}
 
-	// Inserir customers (ignorar duplicatas)
-	for _, customer := range customers {
-		if err := s.repo.InsertCustomer(ctx, &customer); err != nil {
-			// Log do erro mas continua processamento se for duplicata
-			fmt.Printf("Aviso ao inserir cliente %s: %v\n", customer.CustomerID, err)
+	// Inserir customers em lote (ignorar duplicatas)
+	if len(customers) > 0 {
+		if err := s.repo.BulkInsertCustomers(ctx, customers); err != nil {
+			fmt.Printf("Aviso ao inserir clientes em lote: %v\n", err)
 		}
 	}
 
-	// Inserir products (ignorar duplicatas)
-	for _, product := range products {
-		if err := s.repo.InsertProduct(ctx, &product); err != nil {
-			// Log do erro mas continua processamento se for duplicata
-			fmt.Printf("Aviso ao inserir produto %s: %v\n", product.ProductID, err)
+	// Inserir products em lote (ignorar duplicatas)
+	if len(products) > 0 {
+		if err := s.repo.BulkInsertProducts(ctx, products); err != nil {
+			fmt.Printf("Aviso ao inserir produtos em lote: %v\n", err)
 		}
 	}
 

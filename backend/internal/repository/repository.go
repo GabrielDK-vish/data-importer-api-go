@@ -378,3 +378,96 @@ func (r *Repository) GetUserByUsername(ctx context.Context, username string) (*m
 	
 	return &user, nil
 }
+
+// BulkInsertPartners insere múltiplos registros de parceiros usando CopyFrom para performance
+func (r *Repository) BulkInsertPartners(ctx context.Context, partners []models.Partner) error {
+	if len(partners) == 0 {
+		return nil
+	}
+
+	// Preparar dados para CopyFrom
+	rows := make([][]interface{}, len(partners))
+	for i, partner := range partners {
+		rows[i] = []interface{}{
+			partner.PartnerID,
+			partner.PartnerName,
+			partner.MpnID,
+			partner.Tier2MpnID,
+		}
+	}
+
+	// Usar CopyFrom para inserção em lote
+	_, err := r.db.CopyFrom(ctx, pgx.Identifier{"partners"}, 
+		[]string{"partner_id", "partner_name", "mpn_id", "tier2_mpn_id"}, 
+		pgx.CopyFromRows(rows))
+	
+	if err != nil {
+		return fmt.Errorf("erro ao inserir parceiros em lote: %w", err)
+	}
+
+	return nil
+}
+
+// BulkInsertCustomers insere múltiplos registros de clientes usando CopyFrom para performance
+func (r *Repository) BulkInsertCustomers(ctx context.Context, customers []models.Customer) error {
+	if len(customers) == 0 {
+		return nil
+	}
+
+	// Preparar dados para CopyFrom
+	rows := make([][]interface{}, len(customers))
+	for i, customer := range customers {
+		rows[i] = []interface{}{
+			customer.CustomerID,
+			customer.CustomerName,
+			customer.CustomerDomainName,
+			customer.Country,
+		}
+	}
+
+	// Usar CopyFrom para inserção em lote
+	_, err := r.db.CopyFrom(ctx, pgx.Identifier{"customers"}, 
+		[]string{"customer_id", "customer_name", "customer_domain_name", "country"}, 
+		pgx.CopyFromRows(rows))
+	
+	if err != nil {
+		return fmt.Errorf("erro ao inserir clientes em lote: %w", err)
+	}
+
+	return nil
+}
+
+// BulkInsertProducts insere múltiplos registros de produtos usando CopyFrom para performance
+func (r *Repository) BulkInsertProducts(ctx context.Context, products []models.Product) error {
+	if len(products) == 0 {
+		return nil
+	}
+
+	// Preparar dados para CopyFrom
+	rows := make([][]interface{}, len(products))
+	for i, product := range products {
+		rows[i] = []interface{}{
+			product.ProductID,
+			product.SkuID,
+			product.ProductName,
+			product.SkuName,
+			product.MeterType,
+			product.Category,
+			product.SubCategory,
+			product.UnitType,
+			product.ResourceLocation,
+		}
+	}
+
+	// Usar CopyFrom para inserção em lote
+	_, err := r.db.CopyFrom(ctx, pgx.Identifier{"products"}, 
+		[]string{"product_id", "sku_id", "product_name", "sku_name", "meter_type", 
+			"category", "sub_category", "unit_type", "resource_location"}, 
+		pgx.CopyFromRows(rows))
+	
+	if err != nil {
+		return fmt.Errorf("erro ao inserir produtos em lote: %w", err)
+	}
+
+	return nil
+}

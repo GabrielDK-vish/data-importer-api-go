@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/xuri/excelize/v2"
@@ -276,6 +277,71 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 		return nil, nil, nil, nil, fmt.Errorf("colunas obrigatórias não encontradas: %v. Colunas disponíveis: %v", missingColumns, getAvailableColumns(header))
 	}
 
+	// Estruturas para processamento paralelo
+	type rowResult struct {
+		partner  *models.Partner
+		customer *models.Customer
+		product  *models.Product
+		usage    *models.Usage
+		err      error
+		rowNum   int
+	}
+
+	// Canal para resultados
+	resultChan := make(chan rowResult, len(rows)-1)
+	
+	// Worker pool para processamento paralelo
+	numWorkers := 10 // Ajustar conforme necessário
+	if numWorkers > len(rows)-1 {
+		numWorkers = len(rows) - 1
+	}
+	
+	// Canal para distribuir trabalho
+	workChan := make(chan int, len(rows)-1)
+	
+	// Iniciar workers
+	var wg sync.WaitGroup
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for rowNum := range workChan {
+				record := rows[rowNum]
+				
+				// Pular linhas vazias
+				if len(record) == 0 || h.allEmpty(record) {
+					continue
+				}
+
+				// Processar linha
+				partner, customer, product, usage, err := h.parseRow(record, columnMap, rowNum)
+				resultChan <- rowResult{
+					partner:  partner,
+					customer: customer,
+					product:  product,
+					usage:    usage,
+					err:      err,
+					rowNum:   rowNum,
+				}
+			}
+		}()
+	}
+	
+	// Distribuir trabalho
+	go func() {
+		for i := 1; i < len(rows); i++ {
+			workChan <- i
+		}
+		close(workChan)
+	}()
+	
+	// Aguardar workers terminarem
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	// Coletar resultados
 	var partners []models.Partner
 	var customers []models.Customer
 	var products []models.Product
@@ -285,49 +351,40 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 	customerMap := make(map[string]*models.Customer)
 	productMap := make(map[string]*models.Product)
 
-	// Processar linhas de dados (limitar a 100 linhas para teste)
-	maxRows := len(rows)
-	if maxRows > 101 { // 1 cabeçalho + 100 linhas
-		maxRows = 101
-		log.Printf("⚠️  Limitando processamento a %d linhas para teste", maxRows-1)
-	}
-	
-	for i := 1; i < maxRows; i++ {
-		record := rows[i]
-		
-		// Pular linhas vazias
-		if len(record) == 0 || h.allEmpty(record) {
-			continue
-		}
+	processedCount := 0
+	errorCount := 0
 
-		// Processar linha
-		partner, customer, product, usage, err := h.parseRow(record, columnMap, i)
-		if err != nil {
-			log.Printf("⚠️  Erro ao processar linha %d: %v", i, err)
+	for result := range resultChan {
+		if result.err != nil {
+			log.Printf("⚠️  Erro ao processar linha %d: %v", result.rowNum, result.err)
+			errorCount++
 			continue
 		}
 
 		// Adicionar partner se não existir
-		if _, exists := partnerMap[partner.PartnerID]; !exists {
-			partners = append(partners, *partner)
-			partnerMap[partner.PartnerID] = partner
+		if _, exists := partnerMap[result.partner.PartnerID]; !exists {
+			partners = append(partners, *result.partner)
+			partnerMap[result.partner.PartnerID] = result.partner
 		}
 
 		// Adicionar customer se não existir
-		if _, exists := customerMap[customer.CustomerID]; !exists {
-			customers = append(customers, *customer)
-			customerMap[customer.CustomerID] = customer
+		if _, exists := customerMap[result.customer.CustomerID]; !exists {
+			customers = append(customers, *result.customer)
+			customerMap[result.customer.CustomerID] = result.customer
 		}
 
 		// Adicionar product se não existir
-		if _, exists := productMap[product.ProductID]; !exists {
-			products = append(products, *product)
-			productMap[product.ProductID] = product
+		if _, exists := productMap[result.product.ProductID]; !exists {
+			products = append(products, *result.product)
+			productMap[result.product.ProductID] = result.product
 		}
 
 		// Adicionar usage
-		usages = append(usages, *usage)
+		usages = append(usages, *result.usage)
+		processedCount++
 	}
+
+	log.Printf("📊 Processamento concluído: %d linhas processadas, %d erros", processedCount, errorCount)
 
 	return partners, customers, products, usages, nil
 }
