@@ -35,3 +35,4 @@ try {
 Remove-Item $tokenFile -ErrorAction SilentlyContinue
 
 Write-Host "🎉 Teste concluído!" -ForegroundColor Green
+

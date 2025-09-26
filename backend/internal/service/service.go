@@ -49,6 +49,57 @@ func (s *Service) GetBillingMonthly(ctx context.Context) ([]models.BillingReport
 	return reports, nil
 }
 
+// GetBillingByCategory retorna faturamento por categoria
+func (s *Service) GetBillingByCategory(ctx context.Context) ([]models.CategoryBillingReport, error) {
+	reports, err := s.repo.GetBillingByCategory(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erro no service ao buscar faturamento por categoria: %w", err)
+	}
+	return reports, nil
+}
+
+// GetBillingByResource retorna faturamento por recurso
+func (s *Service) GetBillingByResource(ctx context.Context) ([]models.ResourceBillingReport, error) {
+	reports, err := s.repo.GetBillingByResource(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erro no service ao buscar faturamento por recurso: %w", err)
+	}
+	return reports, nil
+}
+
+// GetBillingByCustomer retorna faturamento por cliente
+func (s *Service) GetBillingByCustomer(ctx context.Context) ([]models.CustomerBillingReport, error) {
+	reports, err := s.repo.GetBillingByCustomer(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erro no service ao buscar faturamento por cliente: %w", err)
+	}
+	return reports, nil
+}
+
+// GetKPIData retorna os dados de KPI do sistema
+func (s *Service) GetKPIData(ctx context.Context) (*models.KPIData, error) {
+	// Obter dados de KPI do repositório
+	kpiData, err := s.repo.GetKPIData(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erro no service ao buscar dados de KPI: %w", err)
+	}
+	
+	// Se não houver dados de KPI, criar um objeto vazio
+	if kpiData == nil {
+		kpiData = &models.KPIData{
+			TotalRecords: 0,
+			TotalCategories: 0,
+			TotalResources: 0,
+			TotalCustomers: 0,
+			AvgBillingPerMonth: 0,
+			ProcessingTimeMs: 0,
+			LastUpdated: nil,
+		}
+	}
+	
+	return kpiData, nil
+}
+
 // GetBillingByProduct retorna faturamento por produto
 func (s *Service) GetBillingByProduct(ctx context.Context) ([]models.BillingByProduct, error) {
 	reports, err := s.repo.GetBillingByProduct(ctx)

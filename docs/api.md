@@ -86,85 +86,159 @@ Histórico de uso de um cliente.
 ### Relatórios
 
 #### GET /api/reports/billing/monthly
-Faturamento agrupado por mês.
+Retorna faturamento mensal.
 
 **Response (200):**
 ```json
 [
   {
-    "month": "2024-01",
-    "total": 150.0,
-    "count": 5
+    "month": "2023-01",
+    "total": 12500.75,
+    "records": 150
+  },
+  {
+    "month": "2023-02",
+    "total": 13750.25,
+    "records": 175
   }
 ]
 ```
 
 #### GET /api/reports/billing/by-product
-Faturamento agrupado por produto.
+Retorna faturamento por produto.
 
 **Response (200):**
 ```json
 [
   {
-    "product_id": "PROD001",
-    "product_name": "Azure Virtual Machine",
-    "category": "Compute",
-    "total": 75.0,
-    "count": 3
+    "product_id": "prod1",
+    "product_name": "Product One",
+    "category": "Category A",
+    "total": 8500.50,
+    "count": 120
+  },
+  {
+    "product_id": "prod2",
+    "product_name": "Product Two",
+    "category": "Category B",
+    "total": 6750.25,
+    "count": 85
   }
 ]
 ```
 
 #### GET /api/reports/billing/by-partner
-Faturamento agrupado por parceiro.
+Retorna faturamento por parceiro.
 
 **Response (200):**
 ```json
 [
   {
-    "partner_id": "PARTNER001",
-    "partner_name": "Microsoft Corporation",
-    "total": 100.0,
-    "count": 4
+    "partner_id": "partner1",
+    "partner_name": "Partner One",
+    "total": 9500.75,
+    "count": 130
+  },
+  {
+    "partner_id": "partner2",
+    "partner_name": "Partner Two",
+    "total": 7750.50,
+    "count": 95
   }
 ]
+```
+
+#### GET /api/reports/billing/by-category
+Retorna faturamento por categoria.
+
+**Response (200):**
+```json
+[
+  {
+    "category": "Category A",
+    "total": 8500.50,
+    "count": 120
+  },
+  {
+    "category": "Category B",
+    "total": 6750.25,
+    "count": 85
+  }
+]
+```
+
+#### GET /api/reports/billing/by-resource
+Retorna faturamento por recurso.
+
+**Response (200):**
+```json
+[
+  {
+    "resource": "Resource A",
+    "total": 7500.50,
+    "count": 110
+  },
+  {
+    "resource": "Resource B",
+    "total": 5750.25,
+    "count": 75
+  }
+]
+```
+
+#### GET /api/reports/billing/by-customer
+Retorna faturamento por cliente.
+
+**Response (200):**
+```json
+[
+  {
+    "customer_id": "customer1",
+    "customer_name": "Customer One",
+    "total": 9500.75,
+    "count": 130
+  },
+  {
+    "customer_id": "customer2",
+    "customer_name": "Customer Two",
+    "total": 7750.50,
+    "count": 95
+  }
+]
+```
+
+#### GET /api/reports/kpi
+Retorna indicadores de performance (KPIs).
+
+**Response (200):**
+```json
+{
+  "total_records": 325,
+  "total_categories": 5,
+  "total_resources": 8,
+  "total_customers": 12,
+  "avg_billing_per_month": 13125.50,
+  "processing_time_ms": 1250,
+  "last_updated": "2023-09-28T14:30:00Z"
+}
 ```
 
 ### Upload
 
 #### POST /api/upload
-Upload e processamento de arquivos CSV/Excel.
+Upload de arquivo Excel/CSV.
 
-**Headers:**
-```
-Content-Type: multipart/form-data
-Authorization: Bearer <token>
-```
-
-**Parâmetros:**
-- file: Arquivo CSV ou Excel (.xlsx)
+**Request:**
+- Multipart form com campo `file`
 
 **Response (200):**
 ```json
 {
-  "success": true,
-  "message": "Arquivo processado e dados substituídos com sucesso",
-  "data": {
-    "partners": 5,
-    "customers": 10,
-    "products": 8,
-    "usages": 150
-  }
+  "status": "success",
+  "records_processed": 325,
+  "processing_time_ms": 1250
 }
 ```
-
-**Colunas Obrigatórias:**
-- partner_id
-- customer_id
-- product_id
-- usage_date
-- quantity
-- unit_price
 
 ## Códigos de Status
 

@@ -1,51 +1,49 @@
-# Guia do Importador
+# Processamento de Dados
 
 ## Visão Geral
 
-Sistema de importação de dados CSV e Excel para PostgreSQL com alta performance usando inserção em lotes.
+Sistema de processamento de dados Excel para PostgreSQL com alta performance usando inserção em lotes e normalização de dados.
 
-## Formatos Suportados
+## Estrutura de Dados
 
-- CSV (.csv) - Separado por vírgula ou tab
-- Excel (.xlsx) - Planilhas Microsoft Excel
+O sistema processa arquivos Excel e normaliza os dados nas seguintes entidades:
 
-## Colunas Obrigatórias
+- **Partners**: Informações dos parceiros
+- **Customers**: Dados dos clientes
+- **Products**: Catálogo de produtos com categorias e tipos de recursos
+- **Usages**: Registros de uso e faturamento
 
-- partner_id
-- customer_id
-- product_id
-- usage_date
-- quantity
-- unit_price
+## Campos Processados
 
-## Colunas Opcionais
+### Dados de Parceiros
+- ID do parceiro
+- Nome do parceiro
+- Identificadores MPN
 
-- partner_name, mpn_id, tier2_mpn_id
-- customer_name, customer_domain_name, country
-- sku_id, sku_name, product_name, meter_type, category, sub_category, unit_type
-- invoice_number, charge_start_date, billing_pre_tax_total
-- resource_location, tags, benefit_type
+### Dados de Clientes
+- ID do cliente
+- Nome do cliente
+- Domínio
+- País
 
-## Execução
+### Dados de Produtos
+- ID do produto
+- Nome do produto
+- SKU
+- Categoria
+- Tipo de recurso
+- Tipo de unidade
 
-### Via API (Recomendado)
-```bash
-# Upload via interface web ou API
-curl -X POST https://data-importer-api-go.onrender.com/api/upload \
-  -H "Authorization: Bearer <token>" \
-  -F "file=@dados.xlsx"
-```
+### Dados de Uso
+- Data de uso
+- Quantidade
+- Preço unitário
+- Total pré-impostos
+- Localização do recurso
 
-### Via CLI Local
-```bash
-cd backend
+## Processamento Automático
 
-# CSV
-go run ./cmd/importer/main.go dados.csv
-
-# Excel
-go run ./cmd/importer/excel_importer.go dados.xlsx
-```
+O sistema processa automaticamente o arquivo Excel na inicialização, extraindo e normalizando os dados para o banco PostgreSQL.
 
 ### Via Docker
 ```bash

@@ -133,6 +133,10 @@ func (r *Repository) GetBillingMonthly(ctx context.Context) ([]models.BillingRep
 		reports = append(reports, report)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("erro após iteração de faturamento mensal: %w", err)
+	}
+
 	return reports, nil
 }
 
@@ -168,6 +172,163 @@ func (r *Repository) GetBillingByProduct(ctx context.Context) ([]models.BillingB
 	}
 
 	return reports, nil
+}
+
+// GetBillingByCategory retorna o faturamento por categoria
+func (r *Repository) GetBillingByCategory(ctx context.Context) ([]models.CategoryBillingReport, error) {
+	query := `
+		SELECT 
+			pr.category,
+			SUM(u.billing_pre_tax_total) as total,
+			COUNT(*) as count
+		FROM usages u
+		JOIN products pr ON u.product_id = pr.id
+		GROUP BY pr.category
+		ORDER BY total DESC
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao consultar faturamento por categoria: %w", err)
+	}
+	defer rows.Close()
+
+	var reports []models.CategoryBillingReport
+	for rows.Next() {
+		var report models.CategoryBillingReport
+		if err := rows.Scan(&report.Category, &report.Total, &report.Count); err != nil {
+			return nil, fmt.Errorf("erro ao escanear resultado de faturamento por categoria: %w", err)
+		}
+		reports = append(reports, report)
+	}
+
+	return reports, nil
+}
+
+// GetBillingByResource retorna o faturamento por recurso
+func (r *Repository) GetBillingByResource(ctx context.Context) ([]models.ResourceBillingReport, error) {
+	query := `
+		SELECT 
+			u.resource_location as resource,
+			SUM(u.billing_pre_tax_total) as total,
+			COUNT(*) as count
+		FROM usages u
+		GROUP BY u.resource_location
+		ORDER BY total DESC
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao consultar faturamento por recurso: %w", err)
+	}
+	defer rows.Close()
+
+	var reports []models.ResourceBillingReport
+	for rows.Next() {
+		var report models.ResourceBillingReport
+		if err := rows.Scan(&report.Resource, &report.Total, &report.Count); err != nil {
+			return nil, fmt.Errorf("erro ao escanear resultado de faturamento por recurso: %w", err)
+		}
+		reports = append(reports, report)
+	}
+
+	return reports, nil
+}
+
+// GetBillingByCustomer retorna o faturamento por cliente
+func (r *Repository) GetBillingByCustomer(ctx context.Context) ([]models.CustomerBillingReport, error) {
+	query := `
+		SELECT 
+			c.customer_id,
+			c.customer_name,
+			SUM(u.billing_pre_tax_total) as total,
+			COUNT(*) as count
+		FROM usages u
+		JOIN customers c ON u.customer_id = c.id
+		GROUP BY c.customer_id, c.customer_name
+		ORDER BY total DESC
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao consultar faturamento por cliente: %w", err)
+	}
+	defer rows.Close()
+
+	var reports []models.CustomerBillingReport
+	for rows.Next() {
+		var report models.CustomerBillingReport
+		if err := rows.Scan(&report.CustomerID, &report.CustomerName, &report.Total, &report.Count); err != nil {
+			return nil, fmt.Errorf("erro ao escanear resultado de faturamento por cliente: %w", err)
+		}
+		reports = append(reports, report)
+	}
+
+	return reports, nil
+}
+
+// GetKPIData retorna os dados de KPI do sistema
+func (r *Repository) GetKPIData(ctx context.Context) (*models.KPIData, error) {
+	query := `
+		WITH stats AS (
+			SELECT 
+				COUNT(DISTINCT u.id) as total_records,
+				COUNT(DISTINCT pr.category) as total_categories,
+				COUNT(DISTINCT u.resource_location) as total_resources,
+				COUNT(DISTINCT c.id) as total_customers,
+				AVG(monthly.total) as avg_billing_per_month,
+				MAX(u.updated_at) as last_updated
+			FROM 
+				usages u
+			JOIN 
+				products pr ON u.product_id = pr.id
+			JOIN 
+				customers c ON u.customer_id = c.id
+			LEFT JOIN (
+				SELECT 
+					DATE_TRUNC('month', usage_date) as month,
+					SUM(billing_pre_tax_total) as total
+				FROM 
+					usages
+				GROUP BY 
+					DATE_TRUNC('month', usage_date)
+			) monthly ON TRUE
+		)
+		SELECT 
+			total_records,
+			total_categories,
+			total_resources,
+			total_customers,
+			COALESCE(avg_billing_per_month, 0) as avg_billing_per_month,
+			last_updated
+		FROM 
+			stats
+	`
+
+	var kpiData models.KPIData
+	var lastUpdated pgx.NullTime
+
+	err := r.db.QueryRow(ctx, query).Scan(
+		&kpiData.TotalRecords,
+		&kpiData.TotalCategories,
+		&kpiData.TotalResources,
+		&kpiData.TotalCustomers,
+		&kpiData.AvgBillingPerMonth,
+		&lastUpdated,
+	)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("erro ao consultar dados de KPI: %w", err)
+	}
+
+	if lastUpdated.Valid {
+		kpiData.LastUpdated = &lastUpdated.Time
+	}
+
+	return &kpiData, nil
 }
 
 // GetBillingByPartner retorna faturamento por parceiro

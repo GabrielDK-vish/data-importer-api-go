@@ -1,10 +1,25 @@
-# Data Importer API
+# Desafio Técnico Full stack (Golang)
 
-Sistema de importação e análise de dados de faturamento desenvolvido em Golang com frontend React.
+## Desafio
 
-## Visão Geral
+criar um importador para uma base de dados (postgres) que deverá ser feito na linguagem golang para armazenar os dados do arquivo enviado. Será avaliado a normalização dos dados na base de dados, e a performance do importador.
 
-O projeto consiste em uma API REST em Golang que importa dados de faturamento de arquivos Excel/CSV para PostgreSQL, com interface web React para visualização de relatórios e gráficos.
+criar uma API com a linguagem golang contendo endpoint de autenticação e outros endpoints de consultas dos dados fornecidos e que estão importados na base de dados Postgres.
+
+Será um diferencial criar um front em React para esse projeto, mostrando indicadores totalizadores / agrupamentos de categorias / recursos / clientes / Meses de cobrança.
+
+Necessário publicar em algum link para avaliação, com a documentação de execução da aplicação.
+
+## Solução Proposta
+
+Sistema de importação e análise de dados de faturamento desenvolvido em Golang com frontend React. A solução implementa:
+
+1. Importador de alta performance para arquivos Excel/CSV
+2. API RESTful com autenticação JWT
+3. Banco de dados PostgreSQL com normalização completa
+4. Frontend React com dashboard interativo
+5. Indicadores de performance (KPIs) carregados dinamicamente do banco de dados
+6. Visualizações por categoria, recurso, cliente e período
 
 ## Arquitetura
 
@@ -16,8 +31,8 @@ O projeto consiste em uma API REST em Golang que importa dados de faturamento de
 - Relatórios agregados por mês, produto e parceiro
 
 ### Frontend (React)
-- Dashboard com gráficos interativos
-- Upload de arquivos via interface web
+- Dashboard com gráficos interativos e KPIs dinâmicos
+- Visualizações por categoria, recurso e cliente
 - Relatórios de faturamento
 - Lista de clientes e detalhamento de uso
 
@@ -84,21 +99,26 @@ npm start
 - `GET /api/reports/billing/monthly` - Faturamento mensal
 - `GET /api/reports/billing/by-product` - Faturamento por produto
 - `GET /api/reports/billing/by-partner` - Faturamento por parceiro
-- `POST /api/upload` - Upload de arquivos
+- `GET /api/reports/billing/by-category` - Faturamento por categoria
+- `GET /api/reports/billing/by-resource` - Faturamento por recurso
+- `GET /api/reports/billing/by-customer` - Faturamento por cliente
+- `GET /api/reports/kpi` - Indicadores de performance
 
-## Upload de Arquivos
+## Estrutura de Dados
 
-### Formatos Suportados
-- CSV (.csv) - Separado por vírgula ou tabulação
-- Excel (.xlsx) - Planilhas Microsoft Excel
+### Entidades Principais
+- **Customers**: Informações dos clientes
+- **Products**: Catálogo de produtos com categorias e tipos de recursos
+- **Usages**: Registros de uso e faturamento
+- **Partners**: Dados dos parceiros
 
-### Colunas Obrigatórias
-- partner_id
-- customer_id
-- product_id
-- usage_date
-- quantity
-- unit_price
+### Indicadores de Performance (KPIs)
+- Total de registros processados
+- Total de categorias
+- Total de recursos
+- Total de clientes
+- Média de faturamento mensal
+- Tempo de processamento
 
 ### Mapeamento Automático
 O sistema possui mapeamento automático inteligente que reconhece variações dos nomes das colunas:

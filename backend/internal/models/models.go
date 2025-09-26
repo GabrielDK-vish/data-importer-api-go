@@ -4,6 +4,39 @@ import (
 	"time"
 )
 
+// KPIData representa os dados de KPI do sistema
+type KPIData struct {
+	TotalRecords      int       `json:"totalRecords"`
+	TotalCategories   int       `json:"totalCategories"`
+	TotalResources    int       `json:"totalResources"`
+	TotalCustomers    int       `json:"totalCustomers"`
+	AvgBillingPerMonth float64  `json:"avgBillingPerMonth"`
+	ProcessingTimeMs  int64     `json:"processingTimeMs"`
+	LastUpdated       *time.Time `json:"lastUpdated"`
+}
+
+// CategoryBillingReport representa o faturamento por categoria
+type CategoryBillingReport struct {
+	Category    string  `json:"category"`
+	Total       float64 `json:"total"`
+	Count       int     `json:"count"`
+}
+
+// ResourceBillingReport representa o faturamento por recurso
+type ResourceBillingReport struct {
+	Resource    string  `json:"resource"`
+	Total       float64 `json:"total"`
+	Count       int     `json:"count"`
+}
+
+// CustomerBillingReport representa o faturamento por cliente
+type CustomerBillingReport struct {
+	CustomerID   int     `json:"customer_id"`
+	CustomerName string  `json:"customer_name"`
+	Total        float64 `json:"total"`
+	Count        int     `json:"count"`
+}
+
 // Partner representa um parceiro
 type Partner struct {
 	ID          int       `json:"id" db:"id"`

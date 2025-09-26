@@ -35,3 +35,4 @@ try {
 }
 
 Write-Host "🎉 Teste concluído!" -ForegroundColor Green
+

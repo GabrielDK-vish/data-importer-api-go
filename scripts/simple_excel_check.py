@@ -85,3 +85,4 @@ if __name__ == "__main__":
         check_excel(sys.argv[1])
     else:
         check_excel("Reconfile fornecedores.xlsx")
+

@@ -84,3 +84,4 @@ try {
 
 Write-Host "🎉 Teste de upload em produção concluído!" -ForegroundColor Green
 Write-Host "🌐 Acesse o frontend em: https://data-importer-api-go.vercel.app/" -ForegroundColor Cyan
+

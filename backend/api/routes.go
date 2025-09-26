@@ -60,9 +60,77 @@ func (h *Handler) SetupRoutes() *chi.Mux {
 		r.Get("/reports/billing/monthly", h.MonthlyBillingHandler)
 		r.Get("/reports/billing/by-product", h.BillingByProductHandler)
 		r.Get("/reports/billing/by-partner", h.BillingByPartnerHandler)
+		r.Get("/reports/billing/by-category", h.BillingByCategoryHandler)
+		r.Get("/reports/billing/by-resource", h.BillingByResourceHandler)
+		r.Get("/reports/billing/by-customer", h.BillingByCustomerHandler)
+		r.Get("/reports/kpi", h.KPIHandler)
 	})
 
 	return r
+}
+
+// KPIHandler retorna as métricas de KPI do sistema
+func (h *Handler) KPIHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	
+	// Obter KPIs do banco de dados
+	kpiData, err := h.service.GetKPIData(ctx)
+	if err != nil {
+		http.Error(w, "Erro ao obter KPIs: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	
+	// Retornar KPIs como JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(kpiData)
+}
+
+// BillingByCategoryHandler retorna o faturamento agrupado por categoria
+func (h *Handler) BillingByCategoryHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	
+	// Obter dados de faturamento por categoria
+	billingData, err := h.service.GetBillingByCategory(ctx)
+	if err != nil {
+		http.Error(w, "Erro ao obter dados de faturamento por categoria: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	
+	// Retornar dados como JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(billingData)
+}
+
+// BillingByResourceHandler retorna o faturamento agrupado por recurso
+func (h *Handler) BillingByResourceHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	
+	// Obter dados de faturamento por recurso
+	billingData, err := h.service.GetBillingByResource(ctx)
+	if err != nil {
+		http.Error(w, "Erro ao obter dados de faturamento por recurso: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	
+	// Retornar dados como JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(billingData)
+}
+
+// BillingByCustomerHandler retorna o faturamento agrupado por cliente
+func (h *Handler) BillingByCustomerHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	
+	// Obter dados de faturamento por cliente
+	billingData, err := h.service.GetBillingByCustomer(ctx)
+	if err != nil {
+		http.Error(w, "Erro ao obter dados de faturamento por cliente: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	
+	// Retornar dados como JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(billingData)
 }
 
 // LoginHandler autentica o usuário e retorna um token JWT
