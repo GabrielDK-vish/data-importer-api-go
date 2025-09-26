@@ -116,10 +116,14 @@ func (h *UploadHandler) processExcelFile(file io.Reader) ([]models.Partner, []mo
 	}
 
 	sheetName := sheetList[0]
+	log.Printf("📊 Processando planilha: %s", sheetName)
+	
 	rows, err := f.GetRows(sheetName)
 	if err != nil {
 		return nil, nil, nil, nil, fmt.Errorf("erro ao ler planilha: %w", err)
 	}
+
+	log.Printf("📏 Total de linhas encontradas: %d", len(rows))
 
 	if len(rows) < 2 {
 		return nil, nil, nil, nil, fmt.Errorf("planilha deve ter pelo menos 2 linhas")
@@ -180,6 +184,7 @@ func (h *UploadHandler) processCSVFile(file io.Reader) ([]models.Partner, []mode
 func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models.Customer, []models.Product, []models.Usage, error) {
 	// Processar cabeçalho
 	header := rows[0]
+	log.Printf("📋 Cabeçalhos encontrados: %v", header)
 	columnMap := make(map[string]int)
 
 	// Normalizar cabeçalhos e aplicar aliases
@@ -253,6 +258,7 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 			key = mapped
 		}
 		columnMap[key] = i
+		log.Printf("🔗 Coluna %d: '%s' -> '%s'", i, col, key)
 	}
 
 	// Verificar colunas obrigatórias
