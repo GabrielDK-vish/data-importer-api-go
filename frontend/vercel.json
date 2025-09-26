@@ -21,7 +21,7 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "@react_app_api_url"
+    "REACT_APP_API_URL": "https://data-importer-api-go.onrender.com/"
   }
 }
 

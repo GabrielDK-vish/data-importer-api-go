@@ -237,27 +237,12 @@ O sistema foi desenvolvido para trabalhar com o arquivo `Reconfile fornecedores.
 
 ---
 
-## Melhorias Implementadas
-
 ### Carregamento Automático de Dados
 - Sistema verifica automaticamente se existem dados no banco na inicialização
 - Carrega dados do arquivo "Reconfile fornecedores.xlsx" se o banco estiver vazio
 - Evita recarregamento desnecessário se dados já existirem
 
-### Substituição Inteligente de Dados
-- Upload de novos arquivos substitui completamente os dados existentes
-- Processo atômico garante integridade dos dados
-- Limpeza automática antes da inserção de novos dados
 
-### Tratamento de Erros Melhorado
-- Correção do carregamento infinito na página de clientes
-- Melhor tratamento de erros de autenticação
-- Logs informativos para debugging
-
-### Interface Aprimorada
-- Explicações claras sobre o comportamento do sistema
-- Avisos sobre substituição de dados
-- Feedback melhorado após uploads
 
 ---
 
