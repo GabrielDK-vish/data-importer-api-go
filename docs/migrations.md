@@ -1,4 +1,4 @@
-# 🗄️ Guia de Migrations
+# Guia de Migrations
 
 ## Visão Geral
 
@@ -201,7 +201,7 @@ func runMigrations(databaseURL string) error {
         return fmt.Errorf("erro ao executar migrations: %w", err)
     }
 
-    log.Println("✅ Migrations executadas com sucesso")
+    log.Println("Migrations executadas com sucesso")
     return nil
 }
 ```

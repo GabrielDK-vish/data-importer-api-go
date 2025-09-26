@@ -218,7 +218,7 @@ O sistema foi desenvolvido para trabalhar com o arquivo `Reconfile fornecedores.
 
 
 
-###  URLs
+### URLs
 - **Frontend (React):** [https://data-importer-api-go.vercel.app/](https://data-importer-api-go.vercel.app/)
 - **Backend (API):** [https://data-importer-api-go.onrender.com/](https://data-importer-api-go.onrender.com/)
 - **Health Check:** [https://data-importer-api-go.onrender.com/health](https://data-importer-api-go.onrender.com/health)
@@ -247,8 +247,9 @@ O sistema foi desenvolvido para trabalhar com o arquivo `Reconfile fornecedores.
 ---
 
 ## Documentação 
-- [**API** (endpoints e exemplos)](./docs/api.md) - Documentação completa da API
-- [**Importador** (CLI e Upload)](./docs/importer.md) - Guia do importador
-- [**Migrations** (banco de dados)](./docs/migrations.md) - Controle de schema
-- [**Execução Local** (desenvolvimento)](./docs/local_setup.md) - Setup local
+- [**API**](./docs/api.md) - Documentação completa da API
+- [**Importador**](./docs/importer.md) - Guia do importador
+- [**Migrations**](./docs/migrations.md) - Controle de schema
+- [**Execução Local**](./docs/local_setup.md) - Setup local
+- [**Autenticação**](./docs/auth.md) - Setup local
 

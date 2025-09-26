@@ -11,11 +11,10 @@ import (
 var jwtSecret = []byte(getJWTSecret())
 
 func getJWTSecret() string {
-	if s := os.Getenv("JWT_SECRET"); s != "" {
-		return s
-	}
-	// fallback para compatibilidade local
-	return "sua-chave-secreta-super-segura-aqui"
+    if s := os.Getenv("JWT_SECRET"); s != "" {
+        return s
+    }
+    return "sua-chave-secreta-super-segura-aqui"
 }
 
 // Claims representa as claims do JWT
@@ -65,11 +64,7 @@ func ValidateToken(tokenString string) (*Claims, error) {
 	return claims, nil
 }
 
-// ValidateCredentials valida credenciais de login (DEPRECATED - usar service.ValidateUserCredentials)
-// Mantido para compatibilidade, mas não deve ser usado
 func ValidateCredentials(username, password string) bool {
-	// Esta função está deprecated - use service.ValidateUserCredentials
-	// Mantida apenas para compatibilidade
 	validUsers := map[string]string{
 		"admin": "admin123",
 		"user":  "user123",

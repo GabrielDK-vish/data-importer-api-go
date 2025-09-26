@@ -133,8 +133,6 @@ func (s *Service) ValidateUserCredentials(ctx context.Context, username, passwor
 	return user, nil
 }
 
-// comparePassword compara senha em texto plano com hash bcrypt
 func (s *Service) comparePassword(password, hash string) error {
-	// Importar bcrypt no topo do arquivo
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }

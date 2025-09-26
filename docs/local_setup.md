@@ -1,4 +1,4 @@
-# 🖥️ Guia de Execução Local
+# Guia de Execução Local
 
 ## Pré-requisitos
 
@@ -96,9 +96,9 @@ go run ./cmd/main.go
 
 **Saída esperada:**
 ```
-✅ Migrations executadas com sucesso
-🚀 Servidor iniciado na porta 8080
-📊 Endpoints disponíveis:
+Migrations executadas com sucesso
+Servidor iniciado na porta 8080
+Endpoints disponíveis:
    POST /auth/login
    GET  /api/customers
    GET  /api/customers/{id}/usage
@@ -334,4 +334,4 @@ migrate -path ./db/migrations -database "postgres://postgres:password@localhost:
 
 ---
 
-**🎉 Sistema funcionando localmente!**
+Sistema funcionando localmente!
