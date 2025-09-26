@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../services/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import api from '../services/api';
 
 function Dashboard() {
+  const { user } = useAuth();
   const [monthlyBilling, setMonthlyBilling] = useState([]);
   const [billingByProduct, setBillingByProduct] = useState([]);
   const [billingByPartner, setBillingByPartner] = useState([]);
@@ -38,8 +40,9 @@ function Dashboard() {
       setBillingByPartner(partnerRes.data || []);
       
       // Se não há dados, mostrar mensagem informativa
+      // Se não há dados, exibir mensagem amigável
       if (!monthlyRes.data?.length && !productRes.data?.length && !partnerRes.data?.length) {
-        setError('Nenhum dado encontrado. Faça upload de um arquivo para visualizar os relatórios.');
+        setError('Nenhum dado encontrado ainda. O sistema importa automaticamente o arquivo padrão no login.');
       }
     } catch (err) {
       setError('Erro ao carregar dados do dashboard: ' + (err.response?.data?.message || err.message));
@@ -84,6 +87,10 @@ function Dashboard() {
       
       {/* Cards de estatísticas */}
       <div className="stats-grid">
+        <div className="stat-card">
+          <h3>Tempo de Processamento</h3>
+          <div className="value">{user?.processingTimeMs ? `${(user.processingTimeMs/1000).toFixed(2)}s` : '--'}</div>
+        </div>
         <div className="stat-card">
           <h3>Faturamento Total Mensal</h3>
           <div className="value">${totalMonthly.toFixed(2)}</div>

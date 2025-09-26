@@ -4,7 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import Reports from './pages/Reports';
-import Upload from './pages/Upload';
+// Upload removido: fluxo agora importa automaticamente no login
 import { AuthProvider, useAuth } from './services/AuthContext';
 import './index.css';
 
@@ -44,14 +44,7 @@ function Navigation() {
               Relatórios
             </Link>
           </li>
-          <li>
-            <Link 
-              to="/upload" 
-              className={location.pathname === '/upload' ? 'active' : ''}
-            >
-              Upload
-            </Link>
-          </li>
+          
           <li>
             <button onClick={logout} className="btn">
               Sair
@@ -95,10 +88,7 @@ function AppContent() {
             path="/reports" 
             element={isAuthenticated ? <Reports /> : <Login />} 
           />
-          <Route 
-            path="/upload" 
-            element={isAuthenticated ? <Upload /> : <Login />} 
-          />
+          
         </Routes>
       </main>
     </div>

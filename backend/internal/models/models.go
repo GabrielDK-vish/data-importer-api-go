@@ -109,4 +109,10 @@ type User struct {
 type LoginResponse struct {
 	Token string `json:"token"`
 	User  string `json:"user"`
+    // Opcional: métricas de processamento de importação executada no login
+    ProcessingTimeMs int64 `json:"processing_time_ms,omitempty"`
+    Partners         int   `json:"partners,omitempty"`
+    Customers        int   `json:"customers,omitempty"`
+    Products         int   `json:"products,omitempty"`
+    Usages           int   `json:"usages,omitempty"`
 }

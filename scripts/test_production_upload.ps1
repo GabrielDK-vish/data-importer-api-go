@@ -1,22 +1,21 @@
-# Script para testar upload do arquivo Reconfile fornecedores.xlsx
+# Script para testar upload no ambiente de produção
 
-Write-Host "🚀 Iniciando teste de upload..." -ForegroundColor Green
+Write-Host "🚀 Testando upload no ambiente de produção..." -ForegroundColor Green
 
-# URL da API
-$apiUrl = "http://localhost:8080"
+# URL da API de produção
+$apiUrl = "https://data-importer-api-go.onrender.com"
 
 # Verificar se a API está rodando
-Write-Host "🔍 Verificando se a API está rodando..." -ForegroundColor Yellow
+Write-Host "🔍 Verificando API de produção..." -ForegroundColor Yellow
 try {
-    $healthResponse = Invoke-RestMethod -Uri "$apiUrl/health" -Method GET -TimeoutSec 5
-    Write-Host "✅ API está rodando: $($healthResponse.status)" -ForegroundColor Green
+    $healthResponse = Invoke-RestMethod -Uri "$apiUrl/health" -Method GET -TimeoutSec 10
+    Write-Host "✅ API de produção está rodando: $($healthResponse.status)" -ForegroundColor Green
 } catch {
-    Write-Host "❌ API não está rodando. Inicie o servidor primeiro." -ForegroundColor Red
-    Write-Host "Execute: cd backend; go run cmd/main.go" -ForegroundColor Yellow
+    Write-Host "❌ API de produção não está respondendo: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
 
-# Fazer login para obter token
+# Fazer login
 Write-Host "🔐 Fazendo login..." -ForegroundColor Yellow
 $loginData = @{
     username = "admin"
@@ -24,11 +23,17 @@ $loginData = @{
 } | ConvertTo-Json
 
 try {
-    $loginResponse = Invoke-RestMethod -Uri "$apiUrl/auth/login" -Method POST -Body $loginData -ContentType "application/json" -TimeoutSec 10
+    $loginResponse = Invoke-RestMethod -Uri "$apiUrl/auth/login" -Method POST -Body $loginData -ContentType "application/json" -TimeoutSec 15
     $token = $loginResponse.token
     Write-Host "✅ Login realizado com sucesso" -ForegroundColor Green
 } catch {
     Write-Host "❌ Erro no login: $($_.Exception.Message)" -ForegroundColor Red
+    if ($_.Exception.Response) {
+        $errorStream = $_.Exception.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($errorStream)
+        $errorBody = $reader.ReadToEnd()
+        Write-Host "Detalhes do erro: $errorBody" -ForegroundColor Red
+    }
     exit 1
 }
 
@@ -38,7 +43,7 @@ $headers = @{
 }
 
 # Caminho do arquivo
-$filePath = "..\Reconfile fornecedores.xlsx"
+$filePath = "Reconfile fornecedores.xlsx"
 
 # Verificar se arquivo existe
 if (-not (Test-Path $filePath)) {
@@ -50,13 +55,13 @@ Write-Host "📁 Arquivo encontrado: $filePath" -ForegroundColor Green
 Write-Host "📏 Tamanho: $((Get-Item $filePath).Length) bytes" -ForegroundColor Cyan
 
 # Fazer upload
-Write-Host "📤 Iniciando upload..." -ForegroundColor Yellow
+Write-Host "📤 Iniciando upload para produção..." -ForegroundColor Yellow
 try {
     $form = @{
         file = Get-Item $filePath
     }
     
-    $uploadResponse = Invoke-RestMethod -Uri "$apiUrl/api/upload" -Method POST -Form $form -Headers $headers -TimeoutSec 60
+    $uploadResponse = Invoke-RestMethod -Uri "$apiUrl/api/upload" -Method POST -Form $form -Headers $headers -TimeoutSec 120
     Write-Host "✅ Upload realizado com sucesso!" -ForegroundColor Green
     Write-Host "📊 Resultado:" -ForegroundColor Cyan
     Write-Host "  - Sucesso: $($uploadResponse.success)" -ForegroundColor White
@@ -77,4 +82,5 @@ try {
     exit 1
 }
 
-Write-Host "🎉 Teste de upload concluído!" -ForegroundColor Green
+Write-Host "🎉 Teste de upload em produção concluído!" -ForegroundColor Green
+Write-Host "🌐 Acesse o frontend em: https://data-importer-api-go.vercel.app/" -ForegroundColor Cyan

@@ -111,8 +111,17 @@ type Usage struct {
 ```
 
 ### Mapeamento de Colunas
-O sistema mapeia automaticamente colunas com aliases:
+O sistema possui mapeamento automático inteligente que reconhece variações dos nomes das colunas:
 
+**Mapeamento Automático:**
+- **Partner ID**: `PartnerId`, `Partner_ID`, `partner-id`, `partner id`
+- **Customer ID**: `CustomerId`, `Customer_ID`, `customer-id`, `customer id`
+- **Product ID**: `ProductId`, `Product_ID`, `product-id`, `product id`
+- **Usage Date**: `UsageDate`, `Usage_Date`, `usage-date`, `usage date`, `Date`
+- **Quantity**: `Quantity`, `Qty`, `quantity`, `qty`
+- **Unit Price**: `UnitPrice`, `Unit_Price`, `unit-price`, `unit price`, `Price`
+
+**Aliases Suportados:**
 - PartnerId → partner_id
 - CustomerCountry → country
 - Unit → unit_type
@@ -125,7 +134,15 @@ O sistema mapeia automaticamente colunas com aliases:
 - 02/01/2006
 - 02-01-2006
 - 1/2/2006
-- Números seriais do Excel
+- 2006-01-02T15:04:05Z
+- 2006-01-02T15:04:05.000Z
+- Números seriais do Excel (convertidos automaticamente)
+
+### Formatos de Números Suportados
+- Vírgula como separador decimal (ex: 1,50)
+- Ponto como separador decimal (ex: 1.50)
+- Formato brasileiro com pontos para milhares (ex: 1.000,50)
+- Caracteres não numéricos são removidos automaticamente
 
 ## Performance
 
@@ -152,61 +169,3 @@ O sistema mapeia automaticamente colunas com aliases:
 - Carrega automaticamente se banco vazio
 - Evita duplicação se dados existem
 
-## Tratamento de Erros
-
-### Validação de Colunas
-```
-Colunas obrigatórias não encontradas: [partner_id, customer_id]
-Colunas disponíveis: [PartnerId, CustomerId, ProductId, ...]
-```
-
-### Parsing de Dados
-```
-Erro ao processar linha 15: coluna 'quantity' inválida
-Erro ao parsear usage_date: formato de data inválido: 15/01/2024
-```
-
-### Logs de Processamento
-```
-Processado lote: 1000 registros
-Processado último lote: 250 registros
-Total processado: 1250 registros de 1250 linhas
-```
-
-## Troubleshooting
-
-### Erro: "coluna obrigatória não encontrada"
-Verificar se arquivo possui colunas obrigatórias.
-
-### Erro: "formato de data inválido"
-Usar formatos suportados ou verificar dados.
-
-### Erro: "erro ao conectar ao banco"
-Verificar se PostgreSQL está rodando.
-
-### Erro: "arquivo Excel não possui planilhas"
-Verificar se arquivo Excel é válido.
-
-## Exemplos
-
-### CSV de Exemplo
-```csv
-partner_id,partner_name,customer_id,customer_name,product_id,product_name,usage_date,quantity,unit_price,billing_pre_tax_total
-PARTNER001,Microsoft Corporation,CUST001,TechCorp Solutions,PROD001,Azure Virtual Machine,2024-01-15,100.0,0.05,5.0
-PARTNER002,Amazon Web Services,CUST002,DataFlow Inc,PROD002,AWS EC2 Instance,2024-01-16,200.0,0.08,16.0
-```
-
-### Verificação de Dados
-```bash
-# Conectar ao banco
-psql -U postgres -d data_importer
-
-# Contar registros
-SELECT 'partners' as tabela, COUNT(*) as registros FROM partners
-UNION ALL
-SELECT 'customers', COUNT(*) FROM customers
-UNION ALL
-SELECT 'products', COUNT(*) FROM products
-UNION ALL
-SELECT 'usages', COUNT(*) FROM usages;
-```

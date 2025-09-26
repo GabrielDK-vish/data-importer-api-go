@@ -89,8 +89,8 @@ npm start
 ## Upload de Arquivos
 
 ### Formatos Suportados
-- CSV (.csv)
-- Excel (.xlsx)
+- CSV (.csv) - Separado por vírgula ou tabulação
+- Excel (.xlsx) - Planilhas Microsoft Excel
 
 ### Colunas Obrigatórias
 - partner_id
@@ -100,10 +100,27 @@ npm start
 - quantity
 - unit_price
 
+### Mapeamento Automático
+O sistema possui mapeamento automático inteligente que reconhece variações dos nomes das colunas:
+- **Partner ID**: `PartnerId`, `Partner_ID`, `partner-id`, `partner id`
+- **Customer ID**: `CustomerId`, `Customer_ID`, `customer-id`, `customer id`
+- **Product ID**: `ProductId`, `Product_ID`, `product-id`, `product id`
+- **Usage Date**: `UsageDate`, `Usage_Date`, `usage-date`, `usage date`, `Date`
+- **Quantity**: `Quantity`, `Qty`, `quantity`, `qty`
+- **Unit Price**: `UnitPrice`, `Unit_Price`, `unit-price`, `unit price`, `Price`
+
+### Tratamento Robusto de Erros
+- **Dados inválidos**: Sistema usa valores padrão e continua processamento
+- **Datas inválidas**: Usa data atual como fallback
+- **Números inválidos**: Usa 0 como fallback
+- **Linhas vazias**: Ignoradas automaticamente
+- **Processamento paralelo**: Melhora performance e tolerância a erros
+
 ### Comportamento
 - Upload substitui completamente os dados existentes
 - Processo atômico (tudo ou nada)
 - Carregamento automático na inicialização se banco vazio
+- Logs detalhados para debug e monitoramento
 
 ## Deploy em Produção
 

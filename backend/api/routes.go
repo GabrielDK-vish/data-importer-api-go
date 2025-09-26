@@ -7,8 +7,10 @@ import (
 	"data-importer-api-go/internal/service"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -58,9 +60,6 @@ func (h *Handler) SetupRoutes() *chi.Mux {
 		r.Get("/reports/billing/monthly", h.MonthlyBillingHandler)
 		r.Get("/reports/billing/by-product", h.BillingByProductHandler)
 		r.Get("/reports/billing/by-partner", h.BillingByPartnerHandler)
-		
-		// Upload de arquivos
-		r.Post("/upload", h.UploadFileHandler)
 	})
 
 	return r
@@ -81,17 +80,55 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Gerar token
+    // Gerar token
 	token, err := auth.GenerateToken(loginReq.Username)
 	if err != nil {
 		http.Error(w, "Erro ao gerar token", http.StatusInternalServerError)
 		return
 	}
 
-	response := models.LoginResponse{
-		Token: token,
-		User:  user.Username,
-	}
+    // Processar arquivo fixo no login
+    start := time.Now()
+    var partners []models.Partner
+    var customers []models.Customer
+    var products []models.Product
+    var usages []models.Usage
+    var procErr error
+
+    // Abrir arquivo Excel fixo do diretório raiz do projeto em produção
+    // Em containers, montaremos o arquivo na mesma pasta que o binário (WORKDIR /root)
+    filePath := "../Reconfile fornecedores.xlsx"
+    if _, statErr := os.Stat(filePath); statErr != nil {
+        // Tentar caminho alternativo no runtime do container
+        filePath = "Reconfile fornecedores.xlsx"
+    }
+
+    f, openErr := os.Open(filePath)
+    if openErr != nil {
+        log.Printf("Erro ao abrir arquivo fixo para importação no login: %v", openErr)
+    } else {
+        defer f.Close()
+        uploadHandler := NewUploadHandler(h.service)
+        partners, customers, products, usages, procErr = uploadHandler.processExcelFile(f)
+        if procErr != nil {
+            log.Printf("Erro ao processar arquivo fixo: %v", procErr)
+        } else {
+            if err := h.service.ProcessImportDataWithReplace(r.Context(), partners, customers, products, usages); err != nil {
+                log.Printf("Erro ao inserir dados processados: %v", err)
+            }
+        }
+    }
+    duration := time.Since(start)
+
+    response := models.LoginResponse{
+        Token:            token,
+        User:             user.Username,
+        ProcessingTimeMs: duration.Milliseconds(),
+        Partners:         len(partners),
+        Customers:        len(customers),
+        Products:         len(products),
+        Usages:           len(usages),
+    }
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
@@ -274,7 +311,7 @@ func (h *Handler) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
 	// Verificar se é uma requisição JSON
 	if r.Header.Get("Accept") == "application/json" {
-		apiInfo := map[string]interface{}{
+    apiInfo := map[string]interface{}{
 			"service": "Data Importer API",
 			"version": "1.0.0",
 			"status":  "running",
@@ -290,7 +327,6 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
 					"GET  /api/reports/billing/monthly",
 					"GET  /api/reports/billing/by-product",
 					"GET  /api/reports/billing/by-partner",
-					"POST /api/upload",
 				},
 			},
 			"documentation": "https://github.com/GabrielDK-vish/data-importer-api-go",
@@ -675,10 +711,9 @@ func (h *Handler) TestHandler(w http.ResponseWriter, r *http.Request) {
 		"status": "ok",
 		"message": "API funcionando corretamente",
 		"timestamp": time.Now().Format(time.RFC3339),
-		"endpoints": map[string]string{
+        "endpoints": map[string]string{
 			"health": "/health",
 			"login": "/auth/login",
-			"upload": "/api/upload",
 			"customers": "/api/customers",
 			"reports": "/api/reports/billing/monthly",
 		},

@@ -23,13 +23,17 @@ export function AuthProvider({ children }) {
   const login = async (username, password) => {
     try {
       const response = await api.post('/auth/login', { username, password });
-      const { token, user } = response.data;
+      const { token, user, processing_time_ms, partners, customers, products, usages } = response.data;
       
       localStorage.setItem('token', token);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       setIsAuthenticated(true);
-      setUser({ username: user });
+      setUser({ 
+        username: user,
+        processingTimeMs: processing_time_ms,
+        importStats: { partners, customers, products, usages }
+      });
       
       return { success: true };
     } catch (error) {
