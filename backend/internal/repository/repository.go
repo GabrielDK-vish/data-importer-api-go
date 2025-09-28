@@ -55,26 +55,25 @@ func (r *Repository) GetAllCustomers(ctx context.Context) ([]models.Customer, er
 
 // parseUsageDate tenta converter uma string para time.Time
 func parseUsageDate(s string) (time.Time, error) {
-    var t time.Time
-    var err error
-
     layouts := []string{
-		"02-01-06",    // DD-MM-YY
-		"02/01/06",    // DD/MM/YY
-		"2006-01-02",  // YYYY-MM-DD
-		"01/02/2006",  // MM/DD/YYYY
-	}
-	
+        "02-01-06",    // DD-MM-YY
+        "01-02-06",    // MM-DD-YY
+        "02/01/06",    // DD/MM/YY
+        "01/02/06",    // MM/DD/YY
+        "2006-01-02",  // YYYY-MM-DD
+        "01/02/2006",  // MM/DD/YYYY
+        "02/01/2006",  // DD/MM/YYYY
+    }
 
     for _, layout := range layouts {
-        t, err = time.Parse(layout, s)
-        if err == nil {
+        if t, err := time.Parse(layout, s); err == nil {
             return t, nil
         }
     }
 
     return time.Time{}, fmt.Errorf("formato de data inválido: %s", s)
 }
+
 
 // GetUsageByCustomer retorna o uso de um cliente específico
 func (r *Repository) GetUsageByCustomer(ctx context.Context, customerID int) ([]models.Usage, error) {
