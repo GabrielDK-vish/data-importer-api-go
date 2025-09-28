@@ -492,15 +492,14 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 	rows := make([][]interface{}, len(usages))
 
 	for i, usage := range usages {
-		// Se você quiser, pode converter para sql.NullTime
 		var chargeStartDate, usageDate interface{}
-		if !usage.ChargeStartDate.IsZero() {
-			chargeStartDate = usage.ChargeStartDate
+		if usage.ChargeStartDate.Valid {
+			chargeStartDate = usage.ChargeStartDate.Time
 		} else {
 			chargeStartDate = nil
 		}
-		if !usage.UsageDate.IsZero() {
-			usageDate = usage.UsageDate
+		if usage.UsageDate.Valid {
+			usageDate = usage.UsageDate.Time
 		} else {
 			usageDate = nil
 		}
@@ -663,7 +662,6 @@ func (r *Repository) BulkInsertProducts(ctx context.Context, products []models.P
 		return nil
 	}
 
-	// Preparar dados para CopyFrom
 	rows := make([][]interface{}, len(products))
 	for i, product := range products {
 		rows[i] = []interface{}{
@@ -675,20 +673,21 @@ func (r *Repository) BulkInsertProducts(ctx context.Context, products []models.P
 			product.Category,
 			product.SubCategory,
 			product.UnitType,
-			product.ResourceLocation, 
 		}
-		
 	}
 
-	// Usar CopyFrom para inserção em lote
-	_, err := r.db.CopyFrom(ctx, pgx.Identifier{"products"}, 
+	_, err := r.db.CopyFrom(
+		ctx,
+		pgx.Identifier{"products"},
 		[]string{"product_id", "sku_id", "product_name", "sku_name", "meter_type", 
-			"category", "sub_category", "unit_type", "resource_location"}, 
-		pgx.CopyFromRows(rows))
-	
+		         "category", "sub_category", "unit_type"},
+		pgx.CopyFromRows(rows),
+	)
+
 	if err != nil {
 		return fmt.Errorf("erro ao inserir produtos em lote: %w", err)
 	}
 
 	return nil
 }
+
