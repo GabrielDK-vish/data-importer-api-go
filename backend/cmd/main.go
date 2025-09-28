@@ -204,10 +204,64 @@ func processExcelFile(svc *service.Service, filename string) error {
 	header := rows[0]
 	log.Printf("Cabeçalhos encontrados: %v", header)
 
-	// Mapear índices das colunas
+	// Mapear índices das colunas com mapeamento inteligente (igual ao upload.go)
 	columnMap := make(map[string]int)
+	
+	// Alias para mapear diferentes formatos de colunas
+	alias := map[string]string{
+		// Partner fields
+		"partnerid":              "partner_id",
+		"partnername":            "partner_name",
+		"mpnid":                  "mpn_id",
+		"tier2mpnid":             "tier2_mpn_id",
+		"tier2mpn":               "tier2_mpn_id",
+		
+		// Customer fields
+		"customerid":             "customer_id",
+		"customername":           "customer_name",
+		"customerdomainname":     "customer_domain_name",
+		"customercountry":        "country",
+		"customerdomain":         "customer_domain_name",
+		
+		// Product fields
+		"productid":              "product_id",
+		"skuid":                  "sku_id",
+		"skuname":                "sku_name",
+		"productname":            "product_name",
+		"metertype":              "meter_type",
+		"metercategory":          "category",
+		"metersubcategory":       "sub_category",
+		"unittype":               "unit_type",
+		
+		// Usage fields
+		"invoicenumber":          "invoice_number",
+		"chargestartdate":        "charge_start_date",
+		"usagedate":              "usage_date",
+		"quantity":               "quantity",
+		"unitprice":              "unit_price",
+		"billingpretaxtotal":     "billing_pre_tax_total",
+		"resourcelocation":       "resource_location",
+		"tags":                   "tags",
+		"benefittype":            "benefit_type",
+	}
+	
+	// Normalizar cabeçalhos e aplicar aliases
+	normalize := func(s string) string {
+		s = strings.ToLower(strings.TrimSpace(s))
+		s = strings.ReplaceAll(s, " ", "")
+		s = strings.ReplaceAll(s, "_", "")
+		s = strings.ReplaceAll(s, "-", "")
+		return s
+	}
+	
 	for i, col := range header {
-		columnMap[strings.ToLower(strings.TrimSpace(col))] = i
+		n := normalize(col)
+		key := n
+		if mapped, ok := alias[n]; ok {
+			key = mapped
+		}
+		columnMap[key] = i
+		log.Printf("Mapeando coluna '%s' -> '%s' -> '%s' (índice %d)", col, n, key, i)
 	}
 
 	// Verificar colunas obrigatórias
