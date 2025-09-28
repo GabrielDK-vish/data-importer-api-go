@@ -7,7 +7,6 @@ import (
 	"data-importer-api-go/internal/service"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
