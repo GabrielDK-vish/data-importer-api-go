@@ -46,6 +46,7 @@ func (h *Handler) SetupRoutes() *chi.Mux {
 	r.Get("/health", h.HealthCheckHandler)
 	r.Get("/test", h.TestHandler)
 	r.Get("/debug/data", h.DebugDataHandler)
+	r.Get("/debug/ids", h.DebugIDsHandler)
 
 	// Rotas protegidas
 	r.Route("/api", func(r chi.Router) {
@@ -814,6 +815,86 @@ func (h *Handler) DebugDataHandler(w http.ResponseWriter, r *http.Request) {
 					return usages[0]
 				}
 				return nil
+			}(),
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(debugInfo)
+}
+
+// DebugIDsHandler testa a resolução de IDs
+func (h *Handler) DebugIDsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	
+	// Buscar alguns registros de exemplo
+	partners, err := h.service.GetAllPartners(ctx)
+	if err != nil {
+		partners = []models.Partner{}
+	}
+	
+	customers, err := h.service.GetAllCustomers(ctx)
+	if err != nil {
+		customers = []models.Customer{}
+	}
+	
+	products, err := h.service.GetAllProducts(ctx)
+	if err != nil {
+		products = []models.Product{}
+	}
+	
+	debugInfo := map[string]interface{}{
+		"status": "ok",
+		"timestamp": time.Now().Format(time.RFC3339),
+		"sample_records": map[string]interface{}{
+			"partners": func() interface{} {
+				if len(partners) > 0 {
+					return map[string]interface{}{
+						"id": partners[0].ID,
+						"partner_id": partners[0].PartnerID,
+						"partner_name": partners[0].PartnerName,
+					}
+				}
+				return nil
+			}(),
+			"customers": func() interface{} {
+				if len(customers) > 0 {
+					return map[string]interface{}{
+						"id": customers[0].ID,
+						"customer_id": customers[0].CustomerID,
+						"customer_name": customers[0].CustomerName,
+					}
+				}
+				return nil
+			}(),
+			"products": func() interface{} {
+				if len(products) > 0 {
+					return map[string]interface{}{
+						"id": products[0].ID,
+						"product_id": products[0].ProductID,
+						"product_name": products[0].ProductName,
+					}
+				}
+				return nil
+			}(),
+		},
+		"id_resolution_test": map[string]interface{}{
+			"partner_id_resolution": func() interface{} {
+				if len(partners) > 0 {
+					partnerID, err := h.service.GetPartnerIDByPartnerID(ctx, partners[0].PartnerID)
+					return map[string]interface{}{
+						"partner_id_string": partners[0].PartnerID,
+						"resolved_id": partnerID,
+						"error": err != nil,
+						"error_message": func() string {
+							if err != nil {
+								return err.Error()
+							}
+							return ""
+						}(),
+					}
+				}
+				return "no_partners"
 			}(),
 		},
 	}

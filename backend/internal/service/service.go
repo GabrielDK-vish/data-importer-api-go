@@ -147,74 +147,56 @@ func (s *Service) GetBillingByPartner(ctx context.Context) ([]models.BillingByPa
 
 // ProcessImportData processa dados de importação com inserção em lote
 func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partner, customers []models.Customer, products []models.Product, usages []models.Usage) error {
-	// Inserir partners em lote (ignorar duplicatas)
-	if len(partners) > 0 {
-		if err := s.repo.BulkInsertPartners(ctx, partners); err != nil {
-			fmt.Printf("Aviso ao inserir parceiros em lote: %v\n", err)
+	// Inserir partners individualmente para obter IDs
+	partnerIDMap := make(map[string]int)
+	for i := range partners {
+		if err := s.repo.InsertPartner(ctx, &partners[i]); err != nil {
+			fmt.Printf("Aviso ao inserir parceiro %s: %v\n", partners[i].PartnerID, err)
+		} else {
+			partnerIDMap[partners[i].PartnerID] = partners[i].ID
 		}
 	}
 
-	// Inserir customers em lote (ignorar duplicatas)
-	if len(customers) > 0 {
-		if err := s.repo.BulkInsertCustomers(ctx, customers); err != nil {
-			fmt.Printf("Aviso ao inserir clientes em lote: %v\n", err)
+	// Inserir customers individualmente para obter IDs
+	customerIDMap := make(map[string]int)
+	for i := range customers {
+		if err := s.repo.InsertCustomer(ctx, &customers[i]); err != nil {
+			fmt.Printf("Aviso ao inserir cliente %s: %v\n", customers[i].CustomerID, err)
+		} else {
+			customerIDMap[customers[i].CustomerID] = customers[i].ID
 		}
 	}
 
-	// Inserir products em lote (ignorar duplicatas)
-	if len(products) > 0 {
-		if err := s.repo.BulkInsertProducts(ctx, products); err != nil {
-			fmt.Printf("Aviso ao inserir produtos em lote: %v\n", err)
+	// Inserir products individualmente para obter IDs
+	productIDMap := make(map[string]int)
+	for i := range products {
+		if err := s.repo.InsertProduct(ctx, &products[i]); err != nil {
+			fmt.Printf("Aviso ao inserir produto %s: %v\n", products[i].ProductID, err)
+		} else {
+			productIDMap[products[i].ProductID] = products[i].ID
 		}
 	}
 
-	// Resolver IDs antes de inserir usages
+	// Atualizar usages com os IDs corretos
+	for i := range usages {
+		// Buscar partner_id baseado no partner_id do usage
+		if partnerID, exists := partnerIDMap[usages[i].PartnerIDStr]; exists {
+			usages[i].PartnerID = partnerID
+		}
+		
+		// Buscar customer_id baseado no customer_id do usage
+		if customerID, exists := customerIDMap[usages[i].CustomerIDStr]; exists {
+			usages[i].CustomerID = customerID
+		}
+		
+		// Buscar product_id baseado no product_id do usage
+		if productID, exists := productIDMap[usages[i].ProductIDStr]; exists {
+			usages[i].ProductID = productID
+		}
+	}
+
+	// Inserir usages em lote
 	if len(usages) > 0 {
-		// Criar mapas para resolver IDs
-		partnerIDMap := make(map[string]int)
-		customerIDMap := make(map[string]int)
-		productIDMap := make(map[string]int)
-
-		// Buscar IDs dos partners
-		for _, partner := range partners {
-			if partnerID, err := s.repo.GetPartnerIDByPartnerID(ctx, partner.PartnerID); err == nil {
-				partnerIDMap[partner.PartnerID] = partnerID
-			}
-		}
-
-		// Buscar IDs dos customers
-		for _, customer := range customers {
-			if customerID, err := s.repo.GetCustomerIDByCustomerID(ctx, customer.CustomerID); err == nil {
-				customerIDMap[customer.CustomerID] = customerID
-			}
-		}
-
-		// Buscar IDs dos products
-		for _, product := range products {
-			if productID, err := s.repo.GetProductIDByProductID(ctx, product.ProductID); err == nil {
-				productIDMap[product.ProductID] = productID
-			}
-		}
-
-		// Atualizar usages com os IDs corretos
-		for i := range usages {
-			// Buscar partner_id baseado no partner_id do usage
-			if partnerID, exists := partnerIDMap[usages[i].PartnerIDStr]; exists {
-				usages[i].PartnerID = partnerID
-			}
-			
-			// Buscar customer_id baseado no customer_id do usage
-			if customerID, exists := customerIDMap[usages[i].CustomerIDStr]; exists {
-				usages[i].CustomerID = customerID
-			}
-			
-			// Buscar product_id baseado no product_id do usage
-			if productID, exists := productIDMap[usages[i].ProductIDStr]; exists {
-				usages[i].ProductID = productID
-			}
-		}
-
-		// Inserir usages com IDs corretos
 		if err := s.repo.BulkInsertUsages(ctx, usages); err != nil {
 			return fmt.Errorf("erro ao inserir usos em lote: %w", err)
 		}
@@ -255,5 +237,10 @@ func (s *Service) ValidateUserCredentials(ctx context.Context, username, passwor
 
 func (s *Service) comparePassword(password, hash string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+}
+
+// GetPartnerIDByPartnerID busca o ID numérico de um partner pelo partner_id string
+func (s *Service) GetPartnerIDByPartnerID(ctx context.Context, partnerID string) (int, error) {
+	return s.repo.GetPartnerIDByPartnerID(ctx, partnerID)
 }
 
