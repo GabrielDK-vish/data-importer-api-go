@@ -6,17 +6,17 @@ WORKDIR /app
 # Instalar dependências necessárias
 RUN apk add --no-cache git
 
-# Copiar go mod e sum
-COPY go.mod go.sum ./
+# Copiar go mod e sum do backend
+COPY backend/go.mod backend/go.sum ./
 
 # Baixar dependências
 RUN go mod download
 
-# Copiar código fonte
-COPY . .
+# Copiar código fonte do backend
+COPY backend/ ./
 
-# Copiar arquivo Excel do diretório atual (agora está no backend)
-COPY Reconfile\ fornecedores.xlsx ./Reconfile\ fornecedores.xlsx
+# Copiar arquivo Excel da raiz do projeto
+COPY Reconfile\ fornecedores.xlsx ./
 
 # Build da aplicação
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
@@ -30,7 +30,7 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 # Copiar o binário
-COPY --from=builder /app/main .
+COPY --from=builder /app/main ./
 
 # Copiar migrations
 COPY --from=builder /app/db ./db

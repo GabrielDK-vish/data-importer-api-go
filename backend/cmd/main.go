@@ -120,19 +120,26 @@ func loadInitialData(svc *service.Service) (err error) {
 
     // Tentar localizar o arquivo Excel inicial em múltiplos caminhos
     candidateFiles := []string{
-        "Reconfile fornecedores.xlsx",                 // diretório atual
+        "Reconfile fornecedores.xlsx",                 // diretório atual (backend)
         "../Reconfile fornecedores.xlsx",              // raiz do repo
         "/app/Reconfile fornecedores.xlsx",            // caminho no container
+        "/root/Reconfile fornecedores.xlsx",           // caminho no container runtime
+        "./Reconfile fornecedores.xlsx",               // diretório atual explícito
     }
     var excelFile string
     for _, path := range candidateFiles {
+        log.Printf("Tentando localizar arquivo em: %s", path)
         if _, err := os.Stat(path); err == nil {
             excelFile = path
+            log.Printf("✅ Arquivo encontrado em: %s", path)
             break
+        } else {
+            log.Printf("❌ Arquivo não encontrado em: %s (erro: %v)", path, err)
         }
     }
     if excelFile == "" {
-        log.Printf("Arquivo 'Reconfile fornecedores.xlsx' não encontrado em caminhos padrão, pulando carregamento inicial")
+        log.Printf("⚠️  Arquivo 'Reconfile fornecedores.xlsx' não encontrado em nenhum caminho padrão, pulando carregamento inicial")
+        log.Printf("📁 Caminhos testados: %v", candidateFiles)
         return nil
     }
 
