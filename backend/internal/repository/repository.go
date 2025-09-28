@@ -59,10 +59,12 @@ func parseUsageDate(s string) (time.Time, error) {
     var err error
 
     layouts := []string{
-        "02-01-06",  // 03-08-22
-        "02/01/06",  // 03/08/23
-        "2006-01-02", // YYYY-MM-DD, caso venha nesse formato
-    }
+		"02-01-06",    // DD-MM-YY
+		"02/01/06",    // DD/MM/YY
+		"2006-01-02",  // YYYY-MM-DD
+		"01/02/2006",  // MM/DD/YYYY
+	}
+	
 
     for _, layout := range layouts {
         t, err = time.Parse(layout, s)
