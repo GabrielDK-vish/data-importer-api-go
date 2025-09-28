@@ -519,15 +519,18 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 			"2006/01/02",
 			"02/01/2006",
 			"02-01-2006",
-			"02/01/06",   // ano curto
-			"02-01-06",
+			"02/01/06",   // ano curto com /
+			"02-01-06",   // ano curto com -
 			"1/2/2006",
 			"1-2-2006",
+			"1/2/06",     // ano curto, sem zero à esquerda
+			"1-2-06",     // ano curto, sem zero à esquerda
 			"2006-01-02 15:04:05",
 			"2006/01/02 15:04:05",
 			"2006-01-02T15:04:05Z",
 			"2006-01-02T15:04:05.000Z",
 		}
+		
 		
 		
 		for _, format := range formats {

@@ -215,9 +215,16 @@ func parseExcelRow(record []string, columnMap map[string]int, rowNum int) (*mode
 			"2006/01/02",
 			"02/01/2006",
 			"02-01-2006",
+			"02/01/06",   // ano curto
+			"02-01-06",
+			"1/2/2006",
+			"1-2-2006",
 			"2006-01-02 15:04:05",
 			"2006/01/02 15:04:05",
+			"2006-01-02T15:04:05Z",
+			"2006-01-02T15:04:05.000Z",
 		}
+		
 		
 		for _, format := range formats {
 			if t, err := time.Parse(format, value); err == nil {
