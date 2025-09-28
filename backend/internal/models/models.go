@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -76,21 +77,21 @@ type Product struct {
 
 // Usage representa um registro de uso/faturamento
 type Usage struct {
-	ID                   int       `json:"id" db:"id"`
-	InvoiceNumber        string    `json:"invoice_number" db:"invoice_number"`
-	ChargeStartDate      time.Time `json:"charge_start_date" db:"charge_start_date"`
-	UsageDate            time.Time `json:"usage_date" db:"usage_date"`
-	Quantity             float64   `json:"quantity" db:"quantity"`
-	UnitPrice            float64   `json:"unit_price" db:"unit_price"`
-	BillingPreTaxTotal   float64   `json:"billing_pre_tax_total" db:"billing_pre_tax_total"`
-	ResourceLocation     string    `json:"resource_location" db:"resource_location"`
-	Tags                 string    `json:"tags" db:"tags"`
-	BenefitType          string    `json:"benefit_type" db:"benefit_type"`
-	PartnerID            int       `json:"partner_id" db:"partner_id"`
-	CustomerID           int       `json:"customer_id" db:"customer_id"`
-	ProductID            int       `json:"product_id" db:"product_id"`
-	CreatedAt            time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt            time.Time `json:"updated_at" db:"updated_at"`
+	ID                   int            `json:"id" db:"id"`
+	InvoiceNumber        string         `json:"invoice_number" db:"invoice_number"`
+	ChargeStartDate      sql.NullTime   `json:"charge_start_date" db:"charge_start_date"`
+	UsageDate            time.Time      `json:"usage_date" db:"usage_date"`
+	Quantity             float64        `json:"quantity" db:"quantity"`
+	UnitPrice            float64        `json:"unit_price" db:"unit_price"`
+	BillingPreTaxTotal   float64        `json:"billing_pre_tax_total" db:"billing_pre_tax_total"`
+	ResourceLocation     string         `json:"resource_location" db:"resource_location"`
+	Tags                 string         `json:"tags" db:"tags"`
+	BenefitType          string         `json:"benefit_type" db:"benefit_type"`
+	PartnerID            int            `json:"partner_id" db:"partner_id"`
+	CustomerID           int            `json:"customer_id" db:"customer_id"`
+	ProductID            int            `json:"product_id" db:"product_id"`
+	CreatedAt            time.Time      `json:"created_at" db:"created_at"`
+	UpdatedAt            time.Time      `json:"updated_at" db:"updated_at"`
 	
 	// Relacionamentos
 	Partner  *Partner  `json:"partner,omitempty"`

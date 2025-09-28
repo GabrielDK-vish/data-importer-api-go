@@ -6,6 +6,7 @@ import (
 	"data-importer-api-go/internal/models"
 	"data-importer-api-go/internal/repository"
 	"data-importer-api-go/internal/service"
+	"database/sql"
 	"encoding/csv"
 	"fmt"
 	"log"
@@ -273,7 +274,7 @@ func parseRow(record []string, columnMap map[string]int, rowNum int) (*models.Pa
 	// Criar Usage
 	usage := &models.Usage{
 		InvoiceNumber:      getValue("invoice_number"),
-		ChargeStartDate:    chargeStartDate,
+		ChargeStartDate:    timeToNullTime(chargeStartDate),
 		UsageDate:          usageDate,
 		Quantity:           quantity,
 		UnitPrice:          unitPrice,
@@ -287,4 +288,12 @@ func parseRow(record []string, columnMap map[string]int, rowNum int) (*models.Pa
 	}
 
 	return partner, customer, product, usage, nil
+}
+
+// timeToNullTime converte time.Time para sql.NullTime
+func timeToNullTime(t time.Time) sql.NullTime {
+	if t.IsZero() {
+		return sql.NullTime{Valid: false}
+	}
+	return sql.NullTime{Time: t, Valid: true}
 }

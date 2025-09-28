@@ -3,6 +3,7 @@ package api
 import (
 	"data-importer-api-go/internal/models"
 	"data-importer-api-go/internal/service"
+	"database/sql"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -622,7 +623,7 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 	// Criar Usage
 	usage := &models.Usage{
 		InvoiceNumber:      getValue("invoice_number"),
-		ChargeStartDate:    chargeStartDate,
+		ChargeStartDate:    timeToNullTime(chargeStartDate),
 		UsageDate:          usageDate,
 		Quantity:           quantity,
 		UnitPrice:          unitPrice,
@@ -636,4 +637,12 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 	}
 
 	return partner, customer, product, usage, nil
+}
+
+// timeToNullTime converte time.Time para sql.NullTime
+func timeToNullTime(t time.Time) sql.NullTime {
+	if t.IsZero() {
+		return sql.NullTime{Valid: false}
+	}
+	return sql.NullTime{Time: t, Valid: true}
 }
