@@ -243,6 +243,38 @@ func processExcelFile(svc *service.Service, filename string) error {
 		"resourcelocation":       "resource_location",
 		"tags":                   "tags",
 		"benefittype":            "benefit_type",
+		
+		// Novos campos identificados nos logs
+		"availabilityid":         "availability_id",
+		"publishername":          "publisher_name",
+		"publisherid":            "publisher_id",
+		"subscriptiondescription": "subscription_description",
+		"subscriptionid":         "subscription_id",
+		"chargeenddate":           "charge_end_date",
+		"meterid":                 "meter_id",
+		"metername":              "meter_name",
+		"meterregion":            "meter_region",
+		"unit":                   "unit",
+		"consumedservice":        "consumed_service",
+		"resourcegroup":          "resource_group",
+		"resourceuri":            "resource_uri",
+		"chargetype":             "charge_type",
+		"billingcurrency":        "billing_currency",
+		"pricingpretaxtotal":     "pricing_pre_tax_total",
+		"pricingcurrency":        "pricing_currency",
+		"serviceinfo1":           "service_info1",
+		"serviceinfo2":           "service_info2",
+		"additionalinfo":         "additional_info",
+		"effectiveunitprice":     "effective_unit_price",
+		"pctobcexchangerate":     "pc_to_bc_exchange_rate",
+		"pctobcexchangeratedate": "pc_to_bc_exchange_rate_date",
+		"entitlementid":          "entitlement_id",
+		"entitlementdescription": "entitlement_description",
+		"partnerearnedcreditpercentage": "partner_earned_credit_percentage",
+		"creditpercentage":       "credit_percentage",
+		"credittype":             "credit_type",
+		"benefitorderid":         "benefit_order_id",
+		"benefitid":              "benefit_id",
 	}
 	
 	// Normalizar cabeçalhos e aplicar aliases
@@ -503,6 +535,10 @@ func parseExcelRow(record []string, columnMap map[string]int, rowNum int) (*mode
 		PartnerID:          0, // Será preenchido após inserção
 		CustomerID:         0, // Será preenchido após inserção
 		ProductID:          0, // Será preenchido após inserção
+		// Campos temporários para resolução de IDs
+		PartnerIDStr:       partner.PartnerID,
+		CustomerIDStr:      customer.CustomerID,
+		ProductIDStr:       product.ProductID,
 	}
 
 	return partner, customer, product, usage, nil

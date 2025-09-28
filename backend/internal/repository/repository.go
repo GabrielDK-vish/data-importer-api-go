@@ -696,3 +696,36 @@ func (r *Repository) BulkInsertProducts(ctx context.Context, products []models.P
 	return nil
 }
 
+// GetPartnerIDByPartnerID busca o ID numérico de um partner pelo partner_id string
+func (r *Repository) GetPartnerIDByPartnerID(ctx context.Context, partnerID string) (int, error) {
+	var id int
+	query := `SELECT id FROM partners WHERE partner_id = $1`
+	err := r.db.QueryRow(ctx, query, partnerID).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("erro ao buscar ID do partner: %w", err)
+	}
+	return id, nil
+}
+
+// GetCustomerIDByCustomerID busca o ID numérico de um customer pelo customer_id string
+func (r *Repository) GetCustomerIDByCustomerID(ctx context.Context, customerID string) (int, error) {
+	var id int
+	query := `SELECT id FROM customers WHERE customer_id = $1`
+	err := r.db.QueryRow(ctx, query, customerID).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("erro ao buscar ID do customer: %w", err)
+	}
+	return id, nil
+}
+
+// GetProductIDByProductID busca o ID numérico de um product pelo product_id string
+func (r *Repository) GetProductIDByProductID(ctx context.Context, productID string) (int, error) {
+	var id int
+	query := `SELECT id FROM products WHERE product_id = $1`
+	err := r.db.QueryRow(ctx, query, productID).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("erro ao buscar ID do product: %w", err)
+	}
+	return id, nil
+}
+

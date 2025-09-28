@@ -141,8 +141,53 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 		}
 	}
 
-	// Inserir usages em lote para performance
+	// Resolver IDs antes de inserir usages
 	if len(usages) > 0 {
+		// Criar mapas para resolver IDs
+		partnerIDMap := make(map[string]int)
+		customerIDMap := make(map[string]int)
+		productIDMap := make(map[string]int)
+
+		// Buscar IDs dos partners
+		for _, partner := range partners {
+			if partnerID, err := s.repo.GetPartnerIDByPartnerID(ctx, partner.PartnerID); err == nil {
+				partnerIDMap[partner.PartnerID] = partnerID
+			}
+		}
+
+		// Buscar IDs dos customers
+		for _, customer := range customers {
+			if customerID, err := s.repo.GetCustomerIDByCustomerID(ctx, customer.CustomerID); err == nil {
+				customerIDMap[customer.CustomerID] = customerID
+			}
+		}
+
+		// Buscar IDs dos products
+		for _, product := range products {
+			if productID, err := s.repo.GetProductIDByProductID(ctx, product.ProductID); err == nil {
+				productIDMap[product.ProductID] = productID
+			}
+		}
+
+		// Atualizar usages com os IDs corretos
+		for i := range usages {
+			// Buscar partner_id baseado no partner_id do usage
+			if partnerID, exists := partnerIDMap[usages[i].PartnerIDStr]; exists {
+				usages[i].PartnerID = partnerID
+			}
+			
+			// Buscar customer_id baseado no customer_id do usage
+			if customerID, exists := customerIDMap[usages[i].CustomerIDStr]; exists {
+				usages[i].CustomerID = customerID
+			}
+			
+			// Buscar product_id baseado no product_id do usage
+			if productID, exists := productIDMap[usages[i].ProductIDStr]; exists {
+				usages[i].ProductID = productID
+			}
+		}
+
+		// Inserir usages com IDs corretos
 		if err := s.repo.BulkInsertUsages(ctx, usages); err != nil {
 			return fmt.Errorf("erro ao inserir usos em lote: %w", err)
 		}
@@ -184,3 +229,4 @@ func (s *Service) ValidateUserCredentials(ctx context.Context, username, passwor
 func (s *Service) comparePassword(password, hash string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }
+

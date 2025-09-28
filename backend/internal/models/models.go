@@ -93,6 +93,11 @@ type Usage struct {
 	CreatedAt            time.Time      `json:"created_at" db:"created_at"`
 	UpdatedAt            time.Time      `json:"updated_at" db:"updated_at"`
 	
+	// Campos temporários para processamento (não são persistidos)
+	PartnerIDStr         string         `json:"-" db:"-"`
+	CustomerIDStr        string         `json:"-" db:"-"`
+	ProductIDStr         string         `json:"-" db:"-"`
+	
 	// Relacionamentos
 	Partner  *Partner  `json:"partner,omitempty"`
 	Customer *Customer `json:"customer,omitempty"`
