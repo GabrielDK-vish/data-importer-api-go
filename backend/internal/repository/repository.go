@@ -452,19 +452,6 @@ func (r *Repository) InsertProduct(ctx context.Context, product *models.Product)
 }
 
 func (r *Repository) InsertUsage(ctx context.Context, usage *models.Usage) error {
-    // Converter strings para time.Time, se vierem como string
-    usageDate, err := parseUsageDate(usage.UsageDateString)
-    if err != nil {
-        return fmt.Errorf("erro ao parsear usage_date: %w", err)
-    }
-    usage.UsageDate = usageDate
-
-    chargeStartDate, err := parseUsageDate(usage.ChargeStartDateString)
-    if err != nil {
-        return fmt.Errorf("erro ao parsear charge_start_date: %w", err)
-    }
-    usage.ChargeStartDate = chargeStartDate
-
     query := `
         INSERT INTO usages (invoice_number, charge_start_date, usage_date, quantity, unit_price, 
                             billing_pre_tax_total, resource_location, tags, benefit_type, 
@@ -473,9 +460,21 @@ func (r *Repository) InsertUsage(ctx context.Context, usage *models.Usage) error
         RETURNING id
     `
     
-    err = r.db.QueryRow(ctx, query, usage.InvoiceNumber, usage.ChargeStartDate, usage.UsageDate, 
-        usage.Quantity, usage.UnitPrice, usage.BillingPreTaxTotal, usage.ResourceLocation, 
-        usage.Tags, usage.BenefitType, usage.PartnerID, usage.CustomerID, usage.ProductID).Scan(&usage.ID)
+    err := r.db.QueryRow(ctx, query, 
+        usage.InvoiceNumber,
+        usage.ChargeStartDate,
+        usage.UsageDate,
+        usage.Quantity,
+        usage.UnitPrice,
+        usage.BillingPreTaxTotal,
+        usage.ResourceLocation,
+        usage.Tags,
+        usage.BenefitType,
+        usage.PartnerID,
+        usage.CustomerID,
+        usage.ProductID,
+    ).Scan(&usage.ID)
+    
     if err != nil {
         return fmt.Errorf("erro ao inserir uso: %w", err)
     }
@@ -483,33 +482,33 @@ func (r *Repository) InsertUsage(ctx context.Context, usage *models.Usage) error
     return nil
 }
 
+
 // BulkInsertUsages insere múltiplos registros de uso usando CopyFrom para performance
 func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage) error {
 	if len(usages) == 0 {
 		return nil
 	}
 
-	// Preparar dados para CopyFrom
 	rows := make([][]interface{}, len(usages))
 
 	for i, usage := range usages {
-		// Converter strings para time.Time, se necessário
-		usageDate, err := parseUsageDate(usage.UsageDateString)
-		if err != nil {
-			return fmt.Errorf("erro ao parsear usage_date na linha %d: %w", i, err)
+		// Se você quiser, pode converter para sql.NullTime
+		var chargeStartDate, usageDate interface{}
+		if !usage.ChargeStartDate.IsZero() {
+			chargeStartDate = usage.ChargeStartDate
+		} else {
+			chargeStartDate = nil
 		}
-		usage.UsageDate = usageDate
-
-		chargeStartDate, err := parseUsageDate(usage.ChargeStartDateString)
-		if err != nil {
-			return fmt.Errorf("erro ao parsear charge_start_date na linha %d: %w", i, err)
+		if !usage.UsageDate.IsZero() {
+			usageDate = usage.UsageDate
+		} else {
+			usageDate = nil
 		}
-		usage.ChargeStartDate = chargeStartDate
 
 		rows[i] = []interface{}{
 			usage.InvoiceNumber,
-			usage.ChargeStartDate,
-			usage.UsageDate,
+			chargeStartDate,
+			usageDate,
 			usage.Quantity,
 			usage.UnitPrice,
 			usage.BillingPreTaxTotal,
@@ -522,7 +521,6 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 		}
 	}
 
-	// Usar CopyFrom para inserção em lote
 	_, err := r.db.CopyFrom(
 		ctx,
 		pgx.Identifier{"usages"},
@@ -677,7 +675,9 @@ func (r *Repository) BulkInsertProducts(ctx context.Context, products []models.P
 			product.Category,
 			product.SubCategory,
 			product.UnitType,
+			product.ResourceLocation, 
 		}
+		
 	}
 
 	// Usar CopyFrom para inserção em lote
