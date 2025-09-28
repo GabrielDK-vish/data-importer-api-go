@@ -493,16 +493,18 @@ func (r *Repository) InsertUsage(ctx context.Context, usage *models.Usage) error
 	
 		for i, usage := range usages {
 			var chargeStartDate, usageDate interface{}
-			if !usage.ChargeStartDate.IsZero() {
-				chargeStartDate = usage.ChargeStartDate
-			} else {
-				chargeStartDate = nil
-			}
-			if !usage.UsageDate.IsZero() {
-				usageDate = usage.UsageDate
-			} else {
-				usageDate = nil
-			}
+				if usage.ChargeStartDate.Valid {
+					chargeStartDate = usage.ChargeStartDate.Time
+				} else {
+					chargeStartDate = nil
+				}
+
+				if !usage.UsageDate.IsZero() {  // usage.UsageDate é time.Time
+					usageDate = usage.UsageDate
+				} else {
+					usageDate = nil
+				}
+
 	
 			rows[i] = []interface{}{
 				usage.InvoiceNumber,
