@@ -484,67 +484,69 @@ func (r *Repository) InsertUsage(ctx context.Context, usage *models.Usage) error
 
 
 // Bufunc (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage) error {
-	if len(usages) == 0 {
+	func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage) error {
+		if len(usages) == 0 {
+			return nil
+		}
+	
+		rows := make([][]interface{}, len(usages))
+	
+		for i, usage := range usages {
+			var chargeStartDate, usageDate interface{}
+			if !usage.ChargeStartDate.IsZero() {
+				chargeStartDate = usage.ChargeStartDate
+			} else {
+				chargeStartDate = nil
+			}
+			if !usage.UsageDate.IsZero() {
+				usageDate = usage.UsageDate
+			} else {
+				usageDate = nil
+			}
+	
+			rows[i] = []interface{}{
+				usage.InvoiceNumber,
+				chargeStartDate,
+				usageDate,
+				usage.Quantity,
+				usage.UnitPrice,
+				usage.BillingPreTaxTotal,
+				usage.ResourceLocation,
+				usage.Tags,
+				usage.BenefitType,
+				usage.PartnerID,
+				usage.CustomerID,
+				usage.ProductID,
+			}
+		}
+	
+		_, err := r.db.CopyFrom(
+			ctx,
+			pgx.Identifier{"usages"},
+			[]string{
+				"invoice_number",
+				"charge_start_date",
+				"usage_date",
+				"quantity",
+				"unit_price",
+				"billing_pre_tax_total",
+				"resource_location",
+				"tags",
+				"benefit_type",
+				"partner_id",
+				"customer_id",
+				"product_id",
+			},
+			pgx.CopyFromRows(rows),
+		)
+	
+		if err != nil {
+			return fmt.Errorf("erro ao inserir usos em lote: %w", err)
+		}
+	
 		return nil
 	}
-
-	rows := make([][]interface{}, len(usages))
-
-	for i, usage := range usages {
-		var chargeStartDate, usageDate interface{}
-		if !usage.ChargeStartDate.IsZero() {
-			chargeStartDate = usage.ChargeStartDate
-		} else {
-			chargeStartDate = nil
-		}
-		if !usage.UsageDate.IsZero() {
-			usageDate = usage.UsageDate
-		} else {
-			usageDate = nil
-		}
-
-		rows[i] = []interface{}{
-			usage.InvoiceNumber,
-			chargeStartDate,
-			usageDate,
-			usage.Quantity,
-			usage.UnitPrice,
-			usage.BillingPreTaxTotal,
-			usage.ResourceLocation,
-			usage.Tags,
-			usage.BenefitType,
-			usage.PartnerID,
-			usage.CustomerID,
-			usage.ProductID,
-		}
-	}
-
-	_, err := r.db.CopyFrom(
-		ctx,
-		pgx.Identifier{"usages"},
-		[]string{
-			"invoice_number",
-			"charge_start_date",
-			"usage_date",
-			"quantity",
-			"unit_price",
-			"billing_pre_tax_total",
-			"resource_location",
-			"tags",
-			"benefit_type",
-			"partner_id",
-			"customer_id",
-			"product_id",
-		},
-		pgx.CopyFromRows(rows),
-	)
-
-	if err != nil {
-		return fmt.Errorf("erro ao inserir usos em lote: %w", err)
-	}
-
-	return nil
-}
+	
 
 
 
