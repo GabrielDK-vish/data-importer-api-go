@@ -483,8 +483,7 @@ func (r *Repository) InsertUsage(ctx context.Context, usage *models.Usage) error
 }
 
 
-// BulkInsertUsages insere múltiplos registros de uso usando CopyFrom para performance
-func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage) error {
+// Bufunc (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage) error {
 	if len(usages) == 0 {
 		return nil
 	}
@@ -493,13 +492,13 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 
 	for i, usage := range usages {
 		var chargeStartDate, usageDate interface{}
-		if usage.ChargeStartDate.Valid {
-			chargeStartDate = usage.ChargeStartDate.Time
+		if !usage.ChargeStartDate.IsZero() {
+			chargeStartDate = usage.ChargeStartDate
 		} else {
 			chargeStartDate = nil
 		}
-		if usage.UsageDate.Valid {
-			usageDate = usage.UsageDate.Time
+		if !usage.UsageDate.IsZero() {
+			usageDate = usage.UsageDate
 		} else {
 			usageDate = nil
 		}
@@ -546,6 +545,7 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 
 	return nil
 }
+
 
 
 // ClearAllData limpa todos os dados das tabelas
