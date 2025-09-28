@@ -45,6 +45,7 @@ func (h *Handler) SetupRoutes() *chi.Mux {
 	r.Post("/auth/login", h.LoginHandler)
 	r.Get("/health", h.HealthCheckHandler)
 	r.Get("/test", h.TestHandler)
+	r.Get("/debug/data", h.DebugDataHandler)
 
 	// Rotas protegidas
 	r.Route("/api", func(r chi.Router) {
@@ -753,4 +754,70 @@ func (h *Handler) TestHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(testInfo)
+}
+
+// DebugDataHandler retorna informações de debug sobre os dados no banco
+func (h *Handler) DebugDataHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	
+	// Contar registros em cada tabela
+	partners, err := h.service.GetAllPartners(ctx)
+	if err != nil {
+		partners = []models.Partner{}
+	}
+	
+	customers, err := h.service.GetAllCustomers(ctx)
+	if err != nil {
+		customers = []models.Customer{}
+	}
+	
+	products, err := h.service.GetAllProducts(ctx)
+	if err != nil {
+		products = []models.Product{}
+	}
+	
+	usages, err := h.service.GetAllUsages(ctx)
+	if err != nil {
+		usages = []models.Usage{}
+	}
+	
+	debugInfo := map[string]interface{}{
+		"status": "ok",
+		"timestamp": time.Now().Format(time.RFC3339),
+		"data_counts": map[string]interface{}{
+			"partners": len(partners),
+			"customers": len(customers),
+			"products": len(products),
+			"usages": len(usages),
+		},
+		"sample_data": map[string]interface{}{
+			"first_partner": func() interface{} {
+				if len(partners) > 0 {
+					return partners[0]
+				}
+				return nil
+			}(),
+			"first_customer": func() interface{} {
+				if len(customers) > 0 {
+					return customers[0]
+				}
+				return nil
+			}(),
+			"first_product": func() interface{} {
+				if len(products) > 0 {
+					return products[0]
+				}
+				return nil
+			}(),
+			"first_usage": func() interface{} {
+				if len(usages) > 0 {
+					return usages[0]
+				}
+				return nil
+			}(),
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(debugInfo)
 }

@@ -26,6 +26,33 @@ func (s *Service) GetAllCustomers(ctx context.Context) ([]models.Customer, error
 	return customers, nil
 }
 
+// GetAllPartners retorna todos os parceiros
+func (s *Service) GetAllPartners(ctx context.Context) ([]models.Partner, error) {
+	partners, err := s.repo.GetAllPartners(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erro no service ao buscar parceiros: %w", err)
+	}
+	return partners, nil
+}
+
+// GetAllProducts retorna todos os produtos
+func (s *Service) GetAllProducts(ctx context.Context) ([]models.Product, error) {
+	products, err := s.repo.GetAllProducts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erro no service ao buscar produtos: %w", err)
+	}
+	return products, nil
+}
+
+// GetAllUsages retorna todos os usages
+func (s *Service) GetAllUsages(ctx context.Context) ([]models.Usage, error) {
+	usages, err := s.repo.GetAllUsages(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erro no service ao buscar usages: %w", err)
+	}
+	return usages, nil
+}
+
 // GetUsageByCustomer retorna o uso de um cliente específico
 func (s *Service) GetUsageByCustomer(ctx context.Context, customerID int) ([]models.Usage, error) {
 	// Validar se o customerID é válido

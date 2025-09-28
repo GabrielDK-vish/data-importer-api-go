@@ -729,3 +729,72 @@ func (r *Repository) GetProductIDByProductID(ctx context.Context, productID stri
 	return id, nil
 }
 
+// GetAllPartners retorna todos os parceiros
+func (r *Repository) GetAllPartners(ctx context.Context) ([]models.Partner, error) {
+	query := `SELECT id, partner_id, partner_name, mpn_id, tier2_mpn_id, created_at, updated_at FROM partners ORDER BY id`
+	
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar parceiros: %w", err)
+	}
+	defer rows.Close()
+
+	var partners []models.Partner
+	for rows.Next() {
+		var partner models.Partner
+		err := rows.Scan(&partner.ID, &partner.PartnerID, &partner.PartnerName, &partner.MpnID, &partner.Tier2MpnID, &partner.CreatedAt, &partner.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao escanear parceiro: %w", err)
+		}
+		partners = append(partners, partner)
+	}
+
+	return partners, nil
+}
+
+// GetAllProducts retorna todos os produtos
+func (r *Repository) GetAllProducts(ctx context.Context) ([]models.Product, error) {
+	query := `SELECT id, product_id, sku_id, sku_name, product_name, meter_type, category, sub_category, unit_type, created_at, updated_at FROM products ORDER BY id`
+	
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar produtos: %w", err)
+	}
+	defer rows.Close()
+
+	var products []models.Product
+	for rows.Next() {
+		var product models.Product
+		err := rows.Scan(&product.ID, &product.ProductID, &product.SkuID, &product.SkuName, &product.ProductName, &product.MeterType, &product.Category, &product.SubCategory, &product.UnitType, &product.CreatedAt, &product.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao escanear produto: %w", err)
+		}
+		products = append(products, product)
+	}
+
+	return products, nil
+}
+
+// GetAllUsages retorna todos os usages
+func (r *Repository) GetAllUsages(ctx context.Context) ([]models.Usage, error) {
+	query := `SELECT id, invoice_number, charge_start_date, usage_date, quantity, unit_price, billing_pre_tax_total, resource_location, tags, benefit_type, partner_id, customer_id, product_id, created_at, updated_at FROM usages ORDER BY id LIMIT 100`
+	
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar usages: %w", err)
+	}
+	defer rows.Close()
+
+	var usages []models.Usage
+	for rows.Next() {
+		var usage models.Usage
+		err := rows.Scan(&usage.ID, &usage.InvoiceNumber, &usage.ChargeStartDate, &usage.UsageDate, &usage.Quantity, &usage.UnitPrice, &usage.BillingPreTaxTotal, &usage.ResourceLocation, &usage.Tags, &usage.BenefitType, &usage.PartnerID, &usage.CustomerID, &usage.ProductID, &usage.CreatedAt, &usage.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao escanear usage: %w", err)
+		}
+		usages = append(usages, usage)
+	}
+
+	return usages, nil
+}
+
