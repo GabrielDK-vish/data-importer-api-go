@@ -53,6 +53,27 @@ func (r *Repository) GetAllCustomers(ctx context.Context) ([]models.Customer, er
 	return customers, nil
 }
 
+// parseUsageDate tenta converter uma string para time.Time
+func parseUsageDate(s string) (time.Time, error) {
+    var t time.Time
+    var err error
+
+    layouts := []string{
+        "02-01-06",  // 03-08-22
+        "02/01/06",  // 03/08/23
+        "2006-01-02", // YYYY-MM-DD, caso venha nesse formato
+    }
+
+    for _, layout := range layouts {
+        t, err = time.Parse(layout, s)
+        if err == nil {
+            return t, nil
+        }
+    }
+
+    return time.Time{}, fmt.Errorf("formato de data inválido: %s", s)
+}
+
 // GetUsageByCustomer retorna o uso de um cliente específico
 func (r *Repository) GetUsageByCustomer(ctx context.Context, customerID int) ([]models.Usage, error) {
 	query := `
@@ -430,24 +451,36 @@ func (r *Repository) InsertProduct(ctx context.Context, product *models.Product)
 	return nil
 }
 
-// InsertUsage insere um novo registro de uso
 func (r *Repository) InsertUsage(ctx context.Context, usage *models.Usage) error {
-	query := `
-		INSERT INTO usages (invoice_number, charge_start_date, usage_date, quantity, unit_price, 
-		                   billing_pre_tax_total, resource_location, tags, benefit_type, 
-		                   partner_id, customer_id, product_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-		RETURNING id
-	`
-	
-	err := r.db.QueryRow(ctx, query, usage.InvoiceNumber, usage.ChargeStartDate, usage.UsageDate, 
-		usage.Quantity, usage.UnitPrice, usage.BillingPreTaxTotal, usage.ResourceLocation, 
-		usage.Tags, usage.BenefitType, usage.PartnerID, usage.CustomerID, usage.ProductID).Scan(&usage.ID)
-	if err != nil {
-		return fmt.Errorf("erro ao inserir uso: %w", err)
-	}
-	
-	return nil
+    // Converter strings para time.Time, se vierem como string
+    usageDate, err := parseUsageDate(usage.UsageDateString)
+    if err != nil {
+        return fmt.Errorf("erro ao parsear usage_date: %w", err)
+    }
+    usage.UsageDate = usageDate
+
+    chargeStartDate, err := parseUsageDate(usage.ChargeStartDateString)
+    if err != nil {
+        return fmt.Errorf("erro ao parsear charge_start_date: %w", err)
+    }
+    usage.ChargeStartDate = chargeStartDate
+
+    query := `
+        INSERT INTO usages (invoice_number, charge_start_date, usage_date, quantity, unit_price, 
+                            billing_pre_tax_total, resource_location, tags, benefit_type, 
+                            partner_id, customer_id, product_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING id
+    `
+    
+    err = r.db.QueryRow(ctx, query, usage.InvoiceNumber, usage.ChargeStartDate, usage.UsageDate, 
+        usage.Quantity, usage.UnitPrice, usage.BillingPreTaxTotal, usage.ResourceLocation, 
+        usage.Tags, usage.BenefitType, usage.PartnerID, usage.CustomerID, usage.ProductID).Scan(&usage.ID)
+    if err != nil {
+        return fmt.Errorf("erro ao inserir uso: %w", err)
+    }
+    
+    return nil
 }
 
 // BulkInsertUsages insere múltiplos registros de uso usando CopyFrom para performance
@@ -458,7 +491,21 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 
 	// Preparar dados para CopyFrom
 	rows := make([][]interface{}, len(usages))
+
 	for i, usage := range usages {
+		// Converter strings para time.Time, se necessário
+		usageDate, err := parseUsageDate(usage.UsageDateString)
+		if err != nil {
+			return fmt.Errorf("erro ao parsear usage_date na linha %d: %w", i, err)
+		}
+		usage.UsageDate = usageDate
+
+		chargeStartDate, err := parseUsageDate(usage.ChargeStartDateString)
+		if err != nil {
+			return fmt.Errorf("erro ao parsear charge_start_date na linha %d: %w", i, err)
+		}
+		usage.ChargeStartDate = chargeStartDate
+
 		rows[i] = []interface{}{
 			usage.InvoiceNumber,
 			usage.ChargeStartDate,
@@ -476,18 +523,33 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 	}
 
 	// Usar CopyFrom para inserção em lote
-	_, err := r.db.CopyFrom(ctx, pgx.Identifier{"usages"}, 
-		[]string{"invoice_number", "charge_start_date", "usage_date", "quantity", 
-			"unit_price", "billing_pre_tax_total", "resource_location", "tags", 
-			"benefit_type", "partner_id", "customer_id", "product_id"}, 
-		pgx.CopyFromRows(rows))
-	
+	_, err := r.db.CopyFrom(
+		ctx,
+		pgx.Identifier{"usages"},
+		[]string{
+			"invoice_number",
+			"charge_start_date",
+			"usage_date",
+			"quantity",
+			"unit_price",
+			"billing_pre_tax_total",
+			"resource_location",
+			"tags",
+			"benefit_type",
+			"partner_id",
+			"customer_id",
+			"product_id",
+		},
+		pgx.CopyFromRows(rows),
+	)
+
 	if err != nil {
 		return fmt.Errorf("erro ao inserir usos em lote: %w", err)
 	}
 
 	return nil
 }
+
 
 // ClearAllData limpa todos os dados das tabelas
 func (r *Repository) ClearAllData(ctx context.Context) error {
