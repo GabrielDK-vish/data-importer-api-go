@@ -325,9 +325,7 @@ func (r *Repository) GetKPIData(ctx context.Context) (*models.KPIData, error) {
 		return nil, fmt.Errorf("erro ao consultar dados de KPI: %w", err)
 	}
 
-	if lastUpdated.Valid {
-		kpiData.LastUpdated = &lastUpdated.Time
-	}
+	kpiData.LastUpdated = &lastUpdated
 
 	return &kpiData, nil
 }
