@@ -147,7 +147,11 @@ func (s *Service) GetBillingByPartner(ctx context.Context) ([]models.BillingByPa
 
 // ProcessImportData processa dados de importação com inserção em lote
 func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partner, customers []models.Customer, products []models.Product, usages []models.Usage) error {
-	fmt.Printf("🔍 Processando importação: %d partners, %d customers, %d products, %d usages\n", 
+	// Limpar todos os dados existentes antes de processar novos dados
+	if err := s.repo.ClearAllData(ctx); err != nil {
+		return fmt.Errorf("erro ao limpar dados existentes: %w", err)
+	}
+	fmt.Printf("Dados anteriores removidos com sucesso. Processando importação: %d partners, %d customers, %d products, %d usages\n", 
 		len(partners), len(customers), len(products), len(usages))
 
 	// Inserir partners individualmente para obter IDs
@@ -251,14 +255,14 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 
 	// Inserir usages em lote
 	if len(validUsages) > 0 {
-		fmt.Printf("🚀 Inserindo %d usages válidos em lote\n", len(validUsages))
+		fmt.Printf("Inserindo %d usages válidos em lote\n", len(validUsages))
 		if err := s.repo.BulkInsertUsages(ctx, validUsages); err != nil {
-			fmt.Printf("❌ Erro ao inserir usos em lote: %v\n", err)
+			fmt.Printf("Erro ao inserir usos em lote: %v\n", err)
 			return fmt.Errorf("erro ao inserir usos em lote: %w", err)
 		}
-		fmt.Printf("✅ Inserção em lote concluída com sucesso!\n")
+		fmt.Printf("Inserção em lote concluída com sucesso!\n")
 	} else {
-		fmt.Printf("⚠️ Nenhum usage válido para inserir\n")
+		fmt.Printf("Nenhum usage válido para inserir\n")
 	}
 
 	return nil

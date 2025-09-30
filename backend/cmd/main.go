@@ -130,15 +130,15 @@ func loadInitialData(svc *service.Service) (err error) {
         log.Printf("Tentando localizar arquivo em: %s", path)
         if _, err := os.Stat(path); err == nil {
             excelFile = path
-            log.Printf("✅ Arquivo encontrado em: %s", path)
+            log.Printf("Arquivo encontrado em: %s", path)
             break
         } else {
-            log.Printf("❌ Arquivo não encontrado em: %s (erro: %v)", path, err)
+            log.Printf("Arquivo não encontrado em: %s (erro: %v)", path, err)
         }
     }
     if excelFile == "" {
-        log.Printf("⚠️  Arquivo 'Reconfile fornecedores.xlsx' não encontrado em nenhum caminho padrão, pulando carregamento inicial")
-        log.Printf("📁 Caminhos testados: %v", candidateFiles)
+        log.Printf("Arquivo 'Reconfile fornecedores.xlsx' não encontrado em nenhum caminho padrão, pulando carregamento inicial")
+        log.Printf("Caminhos testados: %v", candidateFiles)
         return nil
     }
 

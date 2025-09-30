@@ -168,6 +168,7 @@ func (r *Repository) GetBillingMonthly(ctx context.Context) ([]models.BillingRep
 func (r *Repository) GetBillingByProduct(ctx context.Context) ([]models.BillingByProduct, error) {
 	query := `
 		SELECT 
+			pr.id,
 			pr.product_id,
 			pr.product_name,
 			pr.category,
@@ -175,7 +176,7 @@ func (r *Repository) GetBillingByProduct(ctx context.Context) ([]models.BillingB
 			COUNT(*) as count
 		FROM usages u
 		JOIN products pr ON u.product_id = pr.id
-		GROUP BY pr.product_id, pr.product_name, pr.category
+		GROUP BY pr.id, pr.product_id, pr.product_name, pr.category
 		ORDER BY total DESC
 	`
 	
@@ -188,7 +189,7 @@ func (r *Repository) GetBillingByProduct(ctx context.Context) ([]models.BillingB
 	var reports []models.BillingByProduct
 	for rows.Next() {
 		var report models.BillingByProduct
-		err := rows.Scan(&report.ProductID, &report.ProductName, &report.Category, &report.Total, &report.Count)
+		err := rows.Scan(&report.ID, &report.ProductID, &report.ProductName, &report.Category, &report.Total, &report.Count)
 		if err != nil {
 			return nil, fmt.Errorf("erro ao escanear relatório por produto: %w", err)
 		}

@@ -117,6 +117,7 @@ type BillingByProduct struct {
 	Category    string  `json:"category" db:"category"`
 	Total       float64 `json:"total" db:"total"`
 	Count       int     `json:"count" db:"count"`
+	ID          int     `json:"id" db:"id"`
 }
 
 type BillingByPartner struct {

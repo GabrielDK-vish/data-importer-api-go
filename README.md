@@ -5,11 +5,13 @@ Sistema de importação e análise de dados de faturamento desenvolvido em Go co
 ## Funcionalidades
 
 - Importador de alta performance para arquivos Excel/CSV
+- Processamento automático do arquivo "Reconfile fornecedores.xlsx" na inicialização
 - API RESTful com autenticação JWT
 - Banco de dados PostgreSQL com normalização completa
 - Frontend React com dashboard interativo
 - Indicadores de performance (KPIs) dinâmicos
 - Visualizações por categoria, recurso, cliente e período
+- Mapeamento de produtos e IDs para visualização correta em gráficos
 
 ## Tecnologias
 

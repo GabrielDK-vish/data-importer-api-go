@@ -55,8 +55,8 @@ func (h *UploadHandler) UploadFileHandler(w http.ResponseWriter, r *http.Request
 	contentType := header.Header.Get("Content-Type")
 	fileName := header.Filename
 
-	log.Printf("📁 Arquivo recebido: %s (%s)", fileName, contentType)
-	log.Printf("📏 Tamanho do arquivo: %d bytes", header.Size)
+	log.Printf("Arquivo recebido: %s (%s)", fileName, contentType)
+	log.Printf("Tamanho do arquivo: %d bytes", header.Size)
 
 	var partners []models.Partner
 	var customers []models.Customer
@@ -79,18 +79,18 @@ func (h *UploadHandler) UploadFileHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 	
-	log.Printf("📊 Dados extraídos: %d partners, %d customers, %d products, %d usages", 
+	log.Printf("Dados extraídos: %d partners, %d customers, %d products, %d usages", 
 		len(partners), len(customers), len(products), len(usages))
 		
 	// Verificar se temos dados de usages
 	if len(usages) == 0 {
-		log.Printf("⚠️ ALERTA: Nenhum registro de usage foi extraído do arquivo!")
+		log.Printf("ALERTA: Nenhum registro de usage foi extraído do arquivo!")
 	}
 
 	// Inserir dados no banco
 	err = h.service.ProcessImportData(r.Context(), partners, customers, products, usages)
 	if err != nil {
-		log.Printf("❌ Erro ao inserir dados: %v", err)
+		log.Printf("Erro ao inserir dados: %v", err)
 		http.Error(w, fmt.Sprintf("Erro ao inserir dados: %v", err), http.StatusInternalServerError)
 		return
 	}
