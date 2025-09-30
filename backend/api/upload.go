@@ -553,7 +553,11 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 		BenefitType:        getValue("benefit_type"),
 		PartnerID:          0, 
 		CustomerID:         0, // Será preenchido após inserção
-		ProductID:          0, 
+		ProductID:          0,
+		// Adicionar os campos de string ID necessários para o mapeamento
+		PartnerIDStr:       partner.PartnerID,
+		CustomerIDStr:      customer.CustomerID,
+		ProductIDStr:       product.ProductID,
 	}
 
 	return partner, customer, product, usage, nil
