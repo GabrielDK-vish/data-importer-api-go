@@ -30,8 +30,11 @@ func NewUploadHandler(service *service.Service) *UploadHandler {
 
 // UploadFileHandler processa upload de arquivos CSV/Excel
 func (h *UploadHandler) UploadFileHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🚀 Iniciando processamento de upload de arquivo...")
+	
 	// Verificar método
 	if r.Method != http.MethodPost {
+		log.Printf("❌ Método não permitido: %s", r.Method)
 		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
@@ -39,6 +42,7 @@ func (h *UploadHandler) UploadFileHandler(w http.ResponseWriter, r *http.Request
 	// Parsear multipart form
 	err := r.ParseMultipartForm(32 << 20) // 32MB max
 	if err != nil {
+		log.Printf("❌ Erro ao parsear formulário: %v", err)
 		http.Error(w, "Erro ao parsear formulário", http.StatusBadRequest)
 		return
 	}
@@ -46,6 +50,7 @@ func (h *UploadHandler) UploadFileHandler(w http.ResponseWriter, r *http.Request
 	// Obter arquivo
 	file, header, err := r.FormFile("file")
 	if err != nil {
+		log.Printf("❌ Erro ao obter arquivo: %v", err)
 		http.Error(w, "Erro ao obter arquivo", http.StatusBadRequest)
 		return
 	}
@@ -65,10 +70,13 @@ func (h *UploadHandler) UploadFileHandler(w http.ResponseWriter, r *http.Request
 
 	// Processar arquivo baseado na extensão
 	if strings.HasSuffix(strings.ToLower(fileName), ".xlsx") {
+		log.Printf("📊 Processando arquivo Excel...")
 		partners, customers, products, usages, err = h.processExcelFile(file)
 	} else if strings.HasSuffix(strings.ToLower(fileName), ".csv") {
+		log.Printf("📊 Processando arquivo CSV...")
 		partners, customers, products, usages, err = h.processCSVFile(file)
 	} else {
+		log.Printf("❌ Tipo de arquivo não suportado: %s", fileName)
 		http.Error(w, "Tipo de arquivo não suportado. Use .csv ou .xlsx", http.StatusBadRequest)
 		return
 	}
@@ -79,13 +87,19 @@ func (h *UploadHandler) UploadFileHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	log.Printf("✅ Arquivo processado com sucesso. Dados extraídos: %d partners, %d customers, %d products, %d usages", 
+		len(partners), len(customers), len(products), len(usages))
+
 	// Inserir dados no banco
+	log.Printf("🔄 Iniciando inserção de dados no banco...")
 	err = h.service.ProcessImportData(r.Context(), partners, customers, products, usages)
 	if err != nil {
 		log.Printf("❌ Erro ao inserir dados: %v", err)
 		http.Error(w, fmt.Sprintf("Erro ao inserir dados: %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	log.Printf("✅ Dados inseridos com sucesso no banco!")
 
 	// Resposta de sucesso
 	response := map[string]interface{}{
@@ -101,6 +115,7 @@ func (h *UploadHandler) UploadFileHandler(w http.ResponseWriter, r *http.Request
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+	log.Printf("✅ Resposta de sucesso enviada ao cliente")
 }
 
 func (h *UploadHandler) processExcelFile(file io.Reader) ([]models.Partner, []models.Customer, []models.Product, []models.Usage, error) {
