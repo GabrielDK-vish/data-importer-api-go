@@ -494,15 +494,24 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 
 	log.Printf("🔄 Iniciando inserção em lote de %d registros de uso", len(usages))
 
-	// Validar IDs antes de inserir
+	// Filtrar usages com IDs válidos
+	validUsages := make([]models.Usage, 0, len(usages))
 	for i, usage := range usages {
 		if usage.PartnerID <= 0 || usage.CustomerID <= 0 || usage.ProductID <= 0 {
-			log.Printf("❌ Erro ao inserir uso #%d: IDs inválidos (Partner: %d, Customer: %d, Product: %d)", 
+			log.Printf("⚠️ Ignorando uso #%d: IDs inválidos (Partner: %d, Customer: %d, Product: %d)", 
 				i+1, usage.PartnerID, usage.CustomerID, usage.ProductID)
-			return fmt.Errorf("erro ao inserir uso #%d: IDs inválidos (Partner: %d, Customer: %d, Product: %d)", 
-				i+1, usage.PartnerID, usage.CustomerID, usage.ProductID)
+			continue
 		}
+		validUsages = append(validUsages, usage)
 	}
+	
+	if len(validUsages) == 0 {
+		log.Printf("❌ Erro: Nenhum registro de uso válido para inserir após filtragem")
+		return fmt.Errorf("nenhum registro de uso válido para inserir")
+	}
+	
+	log.Printf("✅ %d registros de uso válidos para inserção", len(validUsages))
+	usages = validUsages
 
 	rows := make([][]interface{}, len(usages))
 

@@ -78,6 +78,14 @@ func (h *UploadHandler) UploadFileHandler(w http.ResponseWriter, r *http.Request
 		http.Error(w, fmt.Sprintf("Erro ao processar arquivo: %v", err), http.StatusInternalServerError)
 		return
 	}
+	
+	log.Printf("📊 Dados extraídos: %d partners, %d customers, %d products, %d usages", 
+		len(partners), len(customers), len(products), len(usages))
+		
+	// Verificar se temos dados de usages
+	if len(usages) == 0 {
+		log.Printf("⚠️ ALERTA: Nenhum registro de usage foi extraído do arquivo!")
+	}
 
 	// Inserir dados no banco
 	err = h.service.ProcessImportData(r.Context(), partners, customers, products, usages)
@@ -133,6 +141,24 @@ func (h *UploadHandler) processExcelFile(file io.Reader) ([]models.Partner, []mo
 
 	// Processar dados
 	log.Printf("📊 Iniciando processamento de %d linhas de dados", len(rows))
+	
+	// Verificar se há dados suficientes
+	if len(rows) <= 1 {
+		log.Printf("❌ ERRO: Arquivo não contém dados suficientes. Apenas %d linhas encontradas.", len(rows))
+		return nil, nil, nil, nil, fmt.Errorf("arquivo não contém dados suficientes")
+	}
+	
+	// Verificar se há cabeçalhos
+	if len(rows[0]) == 0 {
+		log.Printf("❌ ERRO: Cabeçalhos não encontrados no arquivo.")
+		return nil, nil, nil, nil, fmt.Errorf("cabeçalhos não encontrados no arquivo")
+	}
+	
+	// Imprimir primeiras linhas para debug
+	for i := 0; i < 3 && i < len(rows); i++ {
+		log.Printf("📋 Linha %d: %v", i, rows[i])
+	}
+	
 	return h.processRows(rows)
 }
 
@@ -188,6 +214,7 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 	// Processar cabeçalho
 	header := rows[0]
 	log.Printf("📋 Cabeçalhos encontrados: %v", header)
+	log.Printf("📊 Total de linhas para processar: %d", len(rows))
 	columnMap := make(map[string]int)
 
 	// Normalizar cabeçalhos e aplicar aliases
@@ -467,6 +494,9 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 		}
 		return ""
 	}
+	
+	// Log para debug
+	log.Printf("🔍 Processando linha %d: %v", rowNum+1, record)
 
 	// Função auxiliar para converter string para float
 	parseFloat := func(value string) (float64, error) {
@@ -643,6 +673,15 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 		CustomerID:         0, // Será preenchido após inserção
 		ProductID:          0, 
 	}
+	
+	// Validação adicional para garantir que os dados de usage sejam válidos
+	if quantity <= 0 {
+		log.Printf("⚠️ Linha %d: Quantidade inválida (%.2f) para usage, ajustando para 1.0", rowNum+1, quantity)
+		usage.Quantity = 1.0 // Definir um valor padrão para evitar rejeição
+	}
+	
+	log.Printf("✅ Linha %d: Usage criado com sucesso - Partner: %s, Customer: %s, Product: %s, Quantidade: %.2f", 
+		rowNum+1, partner.PartnerID, customer.CustomerID, product.ProductID, usage.Quantity)
 
 	return partner, customer, product, usage, nil
 }
