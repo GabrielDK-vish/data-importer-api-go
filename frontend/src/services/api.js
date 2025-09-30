@@ -5,6 +5,11 @@ const api = axios.create({
   timeout: 10000,
 });
 
+// Função para obter produtos por parceiro
+export const getPartnerProducts = (partnerId) => {
+  return api.get(`/api/partners/${partnerId}/products`);
+};
+
 // Interceptor para adicionar token automaticamente
 api.interceptors.request.use(
   (config) => {

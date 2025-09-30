@@ -385,6 +385,43 @@ func (r *Repository) GetBillingByPartner(ctx context.Context) ([]models.BillingB
 	return reports, nil
 }
 
+// GetProductsByPartner retorna produtos por parceiro
+func (r *Repository) GetProductsByPartner(ctx context.Context, partnerID string) ([]models.Product, error) {
+	query := `
+		SELECT DISTINCT
+			p.id, p.product_id, p.sku_id, p.sku_name, p.product_name, 
+			p.meter_type, p.category, p.sub_category, p.unit_type,
+			p.created_at, p.updated_at
+		FROM products p
+		JOIN usages u ON u.product_id = p.id
+		JOIN partners pa ON u.partner_id = pa.id
+		WHERE pa.partner_id = $1
+		ORDER BY p.product_name
+	`
+	
+	rows, err := r.db.Query(ctx, query, partnerID)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar produtos por parceiro: %w", err)
+	}
+	defer rows.Close()
+
+	var products []models.Product
+	for rows.Next() {
+		var product models.Product
+		err := rows.Scan(
+			&product.ID, &product.ProductID, &product.SkuID, &product.SkuName, &product.ProductName,
+			&product.MeterType, &product.Category, &product.SubCategory, &product.UnitType,
+			&product.CreatedAt, &product.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao escanear produto: %w", err)
+		}
+		products = append(products, product)
+	}
+
+	return products, nil
+}
+
 // InsertPartner insere um novo parceiro
 func (r *Repository) InsertPartner(ctx context.Context, partner *models.Partner) error {
 	query := `

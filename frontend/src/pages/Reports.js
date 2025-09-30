@@ -1,17 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import api from '../services/api';
+import api, { getPartnerProducts } from '../services/api';
 
 function Reports() {
   const [monthlyBilling, setMonthlyBilling] = useState([]);
   const [billingByProduct, setBillingByProduct] = useState([]);
   const [billingByPartner, setBillingByPartner] = useState([]);
+  const [partnerProducts, setPartnerProducts] = useState({});
+  const [selectedPartnerId, setSelectedPartnerId] = useState(null);
+  const [loadingProducts, setLoadingProducts] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     loadReports();
   }, []);
+  
+  // Função para carregar produtos de um parceiro específico
+  const loadPartnerProducts = async (partnerId) => {
+    if (!partnerId) return;
+    
+    try {
+      setLoadingProducts(true);
+      setSelectedPartnerId(partnerId);
+      
+      // Verificar se já temos os produtos deste parceiro em cache
+      if (partnerProducts[partnerId]) {
+        setLoadingProducts(false);
+        return;
+      }
+      
+      const response = await getPartnerProducts(partnerId);
+      setPartnerProducts(prev => ({
+        ...prev,
+        [partnerId]: response.data || []
+      }));
+    } catch (err) {
+      console.error('Erro ao carregar produtos do parceiro:', err);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   const loadReports = async () => {
     try {
@@ -244,16 +273,66 @@ function Reports() {
                 <th>Total</th>
                 <th>Registros</th>
                 <th>Média por Registro</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody>
               {billingByPartner.map((item, index) => (
-                <tr key={index}>
-                  <td>{item.partner_name}</td>
-                  <td>{formatCurrency(item.total)}</td>
-                  <td>{item.count}</td>
-                  <td>{formatCurrency(item.total / item.count)}</td>
-                </tr>
+                <React.Fragment key={index}>
+                  <tr>
+                    <td>{item.partner_name}</td>
+                    <td>{formatCurrency(item.total)}</td>
+                    <td>{item.count}</td>
+                    <td>{formatCurrency(item.total / item.count)}</td>
+                    <td>
+                      <button 
+                        className="btn-small" 
+                        onClick={() => loadPartnerProducts(item.partner_id)}
+                        style={{ 
+                          padding: '5px 10px', 
+                          background: selectedPartnerId === item.partner_id ? '#4CAF50' : '#2196F3',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {selectedPartnerId === item.partner_id ? 'Ocultar Produtos' : 'Ver Produtos'}
+                      </button>
+                    </td>
+                  </tr>
+                  {selectedPartnerId === item.partner_id && (
+                    <tr>
+                      <td colSpan="5" style={{ padding: '0' }}>
+                        <div style={{ padding: '10px', backgroundColor: '#f9f9f9', borderRadius: '4px' }}>
+                          <h4>Produtos de {item.partner_name}</h4>
+                          {loadingProducts ? (
+                            <p>Carregando produtos...</p>
+                          ) : partnerProducts[item.partner_id]?.length > 0 ? (
+                            <table className="table" style={{ margin: '0' }}>
+                              <thead>
+                                <tr>
+                                  <th>Nome do Produto</th>
+                                  <th>Categoria</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {partnerProducts[item.partner_id].map((product, productIndex) => (
+                                  <tr key={productIndex}>
+                                    <td>{product.product_name}</td>
+                                    <td>{product.category}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <p>Nenhum produto encontrado para este parceiro.</p>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

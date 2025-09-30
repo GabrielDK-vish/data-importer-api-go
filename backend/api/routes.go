@@ -49,25 +49,28 @@ func (h *Handler) SetupRoutes() *chi.Mux {
 	r.Get("/debug/ids", h.DebugIDsHandler)
 
 	// Rotas protegidas
-	r.Route("/api", func(r chi.Router) {
-		r.Use(h.AuthMiddleware)
-		
-		// Clientes
-		r.Get("/customers", h.GetCustomersHandler)
-		r.Get("/customers/{id}/usage", h.GetCustomerUsageHandler)
-		
-		// Relatórios
-		r.Get("/reports/billing/monthly", h.MonthlyBillingHandler)
-		r.Get("/reports/billing/by-product", h.BillingByProductHandler)
-		r.Get("/reports/billing/by-partner", h.BillingByPartnerHandler)
-		r.Get("/reports/billing/by-category", h.BillingByCategoryHandler)
-		r.Get("/reports/billing/by-resource", h.BillingByResourceHandler)
-		r.Get("/reports/billing/by-customer", h.BillingByCustomerHandler)
-		r.Get("/reports/kpi", h.KPIHandler)
-		
-		// Upload
-		r.Post("/upload", h.UploadFileHandler)
-	})
+		r.Route("/api", func(r chi.Router) {
+			r.Use(h.AuthMiddleware)
+			
+			// Clientes
+			r.Get("/customers", h.GetCustomersHandler)
+			r.Get("/customers/{id}/usage", h.GetCustomerUsageHandler)
+			
+			// Parceiros
+			r.Get("/partners/{id}/products", h.GetPartnerProductsHandler)
+			
+			// Relatórios
+			r.Get("/reports/billing/monthly", h.MonthlyBillingHandler)
+			r.Get("/reports/billing/by-product", h.BillingByProductHandler)
+			r.Get("/reports/billing/by-partner", h.BillingByPartnerHandler)
+			r.Get("/reports/billing/by-category", h.BillingByCategoryHandler)
+			r.Get("/reports/billing/by-resource", h.BillingByResourceHandler)
+			r.Get("/reports/billing/by-customer", h.BillingByCustomerHandler)
+			r.Get("/reports/kpi", h.KPIHandler)
+			
+			// Upload
+			r.Post("/upload", h.UploadFileHandler)
+		})
 
 	return r
 }
@@ -261,6 +264,24 @@ func (h *Handler) BillingByPartnerHandler(w http.ResponseWriter, r *http.Request
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(reports)
+}
+
+// GetPartnerProductsHandler retorna produtos de um parceiro específico
+func (h *Handler) GetPartnerProductsHandler(w http.ResponseWriter, r *http.Request) {
+	partnerID := chi.URLParam(r, "id")
+	if partnerID == "" {
+		http.Error(w, "ID do parceiro é obrigatório", http.StatusBadRequest)
+		return
+	}
+
+	products, err := h.service.GetProductsByPartner(r.Context(), partnerID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Erro ao buscar produtos do parceiro: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(products)
 }
 
 // UploadFileHandler processa upload de arquivos CSV/Excel
