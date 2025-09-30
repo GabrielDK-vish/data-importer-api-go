@@ -533,9 +533,11 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 	}
 
 	billingPreTaxTotal, err := parseFloat(getValue("billing_pre_tax_total"))
-	if err != nil {
-		log.Printf("⚠️  Erro ao parsear billing_pre_tax_total na linha %d: %v, usando 0", rowNum+1, err)
-		billingPreTaxTotal = 0
+	if err != nil || billingPreTaxTotal == 0 {
+		// Se não conseguir parsear ou o valor for zero, calcular automaticamente
+		billingPreTaxTotal = quantity * unitPrice
+		log.Printf("📊 Calculando billing_pre_tax_total automaticamente na linha %d: %v = %v * %v", 
+			rowNum+1, billingPreTaxTotal, quantity, unitPrice)
 	}
 
 	// Criar Usage
