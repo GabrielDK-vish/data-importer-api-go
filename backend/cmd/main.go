@@ -105,18 +105,17 @@ func loadInitialData(svc *service.Service) (err error) {
 		}
 	}()
 
-	// Verificar se já existem dados no banco
+	// Verificar se já existem dados no banco (apenas para log)
 	ctx := context.Background()
 	customers, err := svc.GetAllCustomers(ctx)
 	if err != nil {
-		return fmt.Errorf("erro ao verificar dados existentes: %w", err)
+		log.Printf("Aviso: Erro ao verificar dados existentes: %v", err)
+		// Continuar mesmo com erro
+	} else {
+		log.Printf("Informação: Banco de dados contém %d clientes", len(customers))
 	}
-
-	// Se já existem dados, não carregar novamente
-	if len(customers) > 0 {
-		log.Printf("Dados já existem no banco (%d clientes encontrados)", len(customers))
-		return nil
-	}
+	
+	// Sempre carregar o arquivo Excel na inicialização, independente de já existirem dados
 
     // Tentar localizar o arquivo Excel inicial em múltiplos caminhos
     candidateFiles := []string{
@@ -550,4 +549,4 @@ func timeToNullTime(t time.Time) sql.NullTime {
 		return sql.NullTime{Valid: false}
 	}
 	return sql.NullTime{Time: t, Valid: true}
-} 
+}
