@@ -5,6 +5,7 @@ import (
 	"data-importer-api-go/internal/models"
 	"data-importer-api-go/internal/repository"
 	"fmt"
+	"time"
 	
 	"golang.org/x/crypto/bcrypt"
 )
@@ -147,25 +148,26 @@ func (s *Service) GetBillingByPartner(ctx context.Context) ([]models.BillingByPa
 
 // ProcessImportData processa dados de importação com inserção em lote
 func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partner, customers []models.Customer, products []models.Product, usages []models.Usage) error {
-	// Limpar todos os dados existentes antes de processar novos dados
-	if err := s.repo.ClearAllData(ctx); err != nil {
-		return fmt.Errorf("erro ao limpar dados existentes: %w", err)
-	}
-	fmt.Printf("Dados anteriores removidos com sucesso. Processando importação: %d partners, %d customers, %d products, %d usages\n", 
+	// Iniciar contagem de tempo de processamento
+	startTime := time.Now()
+	
+	// Não limpar dados existentes para manter o frontend funcionando
+	// Apenas registrar que estamos processando novos dados
+	fmt.Printf("Processando importação: %d partners, %d customers, %d products, %d usages\n", 
 		len(partners), len(customers), len(products), len(usages))
 
 	// Inserir partners individualmente para obter IDs
 	partnerIDMap := make(map[string]int)
 	for i := range partners {
 		if partners[i].PartnerID == "" {
-			fmt.Printf("⚠️ Ignorando parceiro com ID vazio na posição %d\n", i)
+			fmt.Printf("Ignorando parceiro com ID vazio na posição %d\n", i)
 			continue
 		}
 		if err := s.repo.InsertPartner(ctx, &partners[i]); err != nil {
-			fmt.Printf("⚠️ Aviso ao inserir parceiro %s: %v\n", partners[i].PartnerID, err)
+			fmt.Printf("Aviso ao inserir parceiro %s: %v\n", partners[i].PartnerID, err)
 		} else {
 			partnerIDMap[partners[i].PartnerID] = partners[i].ID
-			fmt.Printf("✅ Partner inserido: %s (ID: %d)\n", partners[i].PartnerID, partners[i].ID)
+			fmt.Printf("Partner inserido: %s (ID: %d)\n", partners[i].PartnerID, partners[i].ID)
 		}
 	}
 
@@ -173,14 +175,14 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 	customerIDMap := make(map[string]int)
 	for i := range customers {
 		if customers[i].CustomerID == "" {
-			fmt.Printf("⚠️ Ignorando cliente com ID vazio na posição %d\n", i)
+			fmt.Printf("Ignorando cliente com ID vazio na posição %d\n", i)
 			continue
 		}
 		if err := s.repo.InsertCustomer(ctx, &customers[i]); err != nil {
-			fmt.Printf("⚠️ Aviso ao inserir cliente %s: %v\n", customers[i].CustomerID, err)
+			fmt.Printf("Aviso ao inserir cliente %s: %v\n", customers[i].CustomerID, err)
 		} else {
 			customerIDMap[customers[i].CustomerID] = customers[i].ID
-			fmt.Printf("✅ Customer inserido: %s (ID: %d)\n", customers[i].CustomerID, customers[i].ID)
+			fmt.Printf("Customer inserido: %s (ID: %d)\n", customers[i].CustomerID, customers[i].ID)
 		}
 	}
 
@@ -188,24 +190,24 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 	productIDMap := make(map[string]int)
 	for i := range products {
 		if products[i].ProductID == "" {
-			fmt.Printf("⚠️ Ignorando produto com ID vazio na posição %d\n", i)
+			fmt.Printf("Ignorando produto com ID vazio na posição %d\n", i)
 			continue
 		}
 		if err := s.repo.InsertProduct(ctx, &products[i]); err != nil {
-			fmt.Printf("⚠️ Aviso ao inserir produto %s: %v\n", products[i].ProductID, err)
+			fmt.Printf("Aviso ao inserir produto %s: %v\n", products[i].ProductID, err)
 		} else {
 			productIDMap[products[i].ProductID] = products[i].ID
-			fmt.Printf("✅ Product inserido: %s (ID: %d)\n", products[i].ProductID, products[i].ID)
+			fmt.Printf("Product inserido: %s (ID: %d)\n", products[i].ProductID, products[i].ID)
 		}
 	}
 
 	// Verificar se temos IDs mapeados
-	fmt.Printf("🔄 Mapeamento de IDs: %d partners, %d customers, %d products\n", 
+	fmt.Printf("Mapeamento de IDs: %d partners, %d customers, %d products\n", 
 		len(partnerIDMap), len(customerIDMap), len(productIDMap))
 
 	// Verificar se temos pelo menos alguns IDs mapeados
 	if len(partnerIDMap) == 0 || len(customerIDMap) == 0 || len(productIDMap) == 0 {
-		fmt.Printf("⚠️ Aviso: Um ou mais mapas de ID estão vazios. Isso pode causar problemas na importação.\n")
+		fmt.Printf("Aviso: Um ou mais mapas de ID estão vazios. Isso pode causar problemas na importação.\n")
 	}
 
 	// Atualizar usages com os IDs corretos
@@ -213,14 +215,14 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 	for i := range usages {
 		// Verificar se temos os campos temporários preenchidos
 		if usages[i].PartnerIDStr == "" || usages[i].CustomerIDStr == "" || usages[i].ProductIDStr == "" {
-			fmt.Printf("⚠️ Usage ignorado: campos de ID temporários vazios (linha %d)\n", i+1)
+			fmt.Printf("Usage ignorado: campos de ID temporários vazios (linha %d)\n", i+1)
 			continue
 		}
 
 		// Buscar partner_id baseado no partner_id do usage
 		partnerID, partnerExists := partnerIDMap[usages[i].PartnerIDStr]
 		if !partnerExists {
-			fmt.Printf("⚠️ Partner ID não encontrado para: %s (linha %d)\n", usages[i].PartnerIDStr, i+1)
+			fmt.Printf("Partner ID não encontrado para: %s (linha %d)\n", usages[i].PartnerIDStr, i+1)
 			continue
 		}
 		usages[i].PartnerID = partnerID
@@ -228,7 +230,7 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 		// Buscar customer_id baseado no customer_id do usage
 		customerID, customerExists := customerIDMap[usages[i].CustomerIDStr]
 		if !customerExists {
-			fmt.Printf("⚠️ Customer ID não encontrado para: %s (linha %d)\n", usages[i].CustomerIDStr, i+1)
+			fmt.Printf("Customer ID não encontrado para: %s (linha %d)\n", usages[i].CustomerIDStr, i+1)
 			continue
 		}
 		usages[i].CustomerID = customerID
@@ -236,20 +238,20 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 		// Buscar product_id baseado no product_id do usage
 		productID, productExists := productIDMap[usages[i].ProductIDStr]
 		if !productExists {
-			fmt.Printf("⚠️ Product ID não encontrado para: %s (linha %d)\n", usages[i].ProductIDStr, i+1)
+			fmt.Printf("Product ID não encontrado para: %s (linha %d)\n", usages[i].ProductIDStr, i+1)
 			continue
 		}
 		usages[i].ProductID = productID
 
 		// Verificar se a quantidade é válida
 		if usages[i].Quantity <= 0 {
-			fmt.Printf("⚠️ Usage ignorado: quantidade inválida %.2f (linha %d)\n", usages[i].Quantity, i+1)
+			fmt.Printf("Usage ignorado: quantidade inválida %.2f (linha %d)\n", usages[i].Quantity, i+1)
 			continue
 		}
 
 		// Adicionar à lista de usages válidos
 		validUsages = append(validUsages, usages[i])
-		fmt.Printf("✅ Usage mapeado: Partner=%d, Customer=%d, Product=%d, Quantidade=%f\n", 
+		fmt.Printf("Usage mapeado: Partner=%d, Customer=%d, Product=%d, Quantidade=%f\n", 
 			usages[i].PartnerID, usages[i].CustomerID, usages[i].ProductID, usages[i].Quantity)
 	}
 
@@ -265,6 +267,27 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 		fmt.Printf("Nenhum usage válido para inserir\n")
 	}
 
+	// Calcular e salvar a métrica de tempo de processamento
+	endTime := time.Now()
+	processingTime := endTime.Sub(startTime)
+	
+	metric := &models.ProcessingMetric{
+		FileName:     "Reconfile fornecedores.xlsx",
+		StartTime:    startTime,
+		EndTime:      endTime,
+		DurationMs:   processingTime.Milliseconds(),
+		RecordsCount: len(usages),
+		CreatedAt:    time.Now(),
+	}
+	
+	if err := s.repo.SaveProcessingMetric(ctx, metric); err != nil {
+		fmt.Printf("Erro ao salvar métrica de processamento: %v\n", err)
+		// Não retornamos erro aqui para não interromper o fluxo principal
+	} else {
+		fmt.Printf("Métrica de processamento salva: %d ms para processar %d registros\n", 
+			metric.DurationMs, metric.RecordsCount)
+	}
+
 	return nil
 }
 
@@ -277,6 +300,15 @@ func (s *Service) ProcessImportDataWithReplace(ctx context.Context, partners []m
 
 	// Processar dados normalmente
 	return s.ProcessImportData(ctx, partners, customers, products, usages)
+}
+
+// GetProcessingMetrics retorna todas as métricas de processamento
+func (s *Service) GetProcessingMetrics(ctx context.Context) ([]models.ProcessingMetric, error) {
+	metrics, err := s.repo.GetAllProcessingMetrics(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erro no service ao buscar métricas de processamento: %w", err)
+	}
+	return metrics, nil
 }
 
 // ValidateUserCredentials valida credenciais de usuário no banco de dados

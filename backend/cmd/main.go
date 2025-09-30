@@ -44,6 +44,13 @@ func main() {
 	// Inicializar camadas
 	repo := repository.NewRepository(db)
 	svc := service.NewService(repo)
+	
+	// Criar tabela de métricas de processamento
+	if err := repo.CreateProcessingMetricsTable(context.Background()); err != nil {
+		log.Printf("Aviso: Não foi possível criar tabela de métricas: %v", err)
+	} else {
+		log.Printf("Tabela de métricas de processamento verificada com sucesso")
+	}
 
 	// Carregar dados iniciais se não existirem (não deve encerrar a API em caso de erro)
 	if err := loadInitialData(svc); err != nil {

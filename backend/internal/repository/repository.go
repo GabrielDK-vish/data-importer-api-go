@@ -611,6 +611,86 @@ func (r *Repository) ClearAllData(ctx context.Context) error {
 	return nil
 }
 
+// CreateProcessingMetricsTable cria a tabela de métricas de processamento se não existir
+func (r *Repository) CreateProcessingMetricsTable(ctx context.Context) error {
+	query := `
+	CREATE TABLE IF NOT EXISTS processing_metrics (
+		id SERIAL PRIMARY KEY,
+		file_name TEXT NOT NULL,
+		start_time TIMESTAMP NOT NULL,
+		end_time TIMESTAMP NOT NULL,
+		duration_ms BIGINT NOT NULL,
+		records_count INTEGER NOT NULL,
+		created_at TIMESTAMP NOT NULL DEFAULT NOW()
+	);`
+
+	_, err := r.db.Exec(ctx, query)
+	if err != nil {
+		return fmt.Errorf("erro ao criar tabela de métricas de processamento: %w", err)
+	}
+	return nil
+}
+
+// SaveProcessingMetric salva uma métrica de processamento no banco de dados
+func (r *Repository) SaveProcessingMetric(ctx context.Context, metric *models.ProcessingMetric) error {
+	query := `
+	INSERT INTO processing_metrics (file_name, start_time, end_time, duration_ms, records_count, created_at)
+	VALUES ($1, $2, $3, $4, $5, $6)
+	RETURNING id`
+
+	err := r.db.QueryRow(ctx, query,
+		metric.FileName,
+		metric.StartTime,
+		metric.EndTime,
+		metric.DurationMs,
+		metric.RecordsCount,
+		time.Now(),
+	).Scan(&metric.ID)
+
+	if err != nil {
+		return fmt.Errorf("erro ao salvar métrica de processamento: %w", err)
+	}
+	return nil
+}
+
+// GetAllProcessingMetrics retorna todas as métricas de processamento
+func (r *Repository) GetAllProcessingMetrics(ctx context.Context) ([]models.ProcessingMetric, error) {
+	query := `
+	SELECT id, file_name, start_time, end_time, duration_ms, records_count, created_at
+	FROM processing_metrics
+	ORDER BY created_at DESC`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar métricas de processamento: %w", err)
+	}
+	defer rows.Close()
+
+	var metrics []models.ProcessingMetric
+	for rows.Next() {
+		var metric models.ProcessingMetric
+		err := rows.Scan(
+			&metric.ID,
+			&metric.FileName,
+			&metric.StartTime,
+			&metric.EndTime,
+			&metric.DurationMs,
+			&metric.RecordsCount,
+			&metric.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao escanear métrica de processamento: %w", err)
+		}
+		metrics = append(metrics, metric)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("erro ao iterar sobre métricas de processamento: %w", err)
+	}
+
+	return metrics, nil
+}
+
 // GetUserByUsername busca um usuário pelo username
 func (r *Repository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	query := `

@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import Reports from './pages/Reports';
+import Metrics from './pages/Metrics';
 // Upload removido: fluxo agora importa automaticamente no login
 import { AuthProvider, useAuth } from './services/AuthContext';
 import './index.css';
@@ -42,6 +43,14 @@ function Navigation() {
               className={location.pathname === '/reports' ? 'active' : ''}
             >
               Relatórios
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/metrics" 
+              className={location.pathname === '/metrics' ? 'active' : ''}
+            >
+              Métricas
             </Link>
           </li>
           
@@ -87,6 +96,10 @@ function AppContent() {
           <Route 
             path="/reports" 
             element={isAuthenticated ? <Reports /> : <Login />} 
+          />
+          <Route 
+            path="/metrics" 
+            element={isAuthenticated ? <Metrics /> : <Login />} 
           />
           
         </Routes>

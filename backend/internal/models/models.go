@@ -5,6 +5,17 @@ import (
 	"time"
 )
 
+// ProcessingMetric representa a métrica de tempo de processamento
+type ProcessingMetric struct {
+	ID              int       `json:"id" db:"id"`
+	FileName        string    `json:"file_name" db:"file_name"`
+	StartTime       time.Time `json:"start_time" db:"start_time"`
+	EndTime         time.Time `json:"end_time" db:"end_time"`
+	DurationMs      int64     `json:"duration_ms" db:"duration_ms"`
+	RecordsCount    int       `json:"records_count" db:"records_count"`
+	CreatedAt       time.Time `json:"created_at" db:"created_at"`
+}
+
 // KPIData representa os dados de KPI do sistema
 type KPIData struct {
 	TotalRecords      int       `json:"totalRecords"`
