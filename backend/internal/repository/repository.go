@@ -487,12 +487,17 @@ func (r *Repository) InsertUsage(ctx context.Context, usage *models.Usage) error
 // BulkInsertUsages insere múltiplos registros de uso em lote
 func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage) error {
 	if len(usages) == 0 {
+		log.Printf("⚠️ Nenhum registro de uso para inserir")
 		return nil
 	}
+
+	log.Printf("🔄 Iniciando inserção em lote de %d registros de uso", len(usages))
 
 	// Validar IDs antes de inserir
 	for i, usage := range usages {
 		if usage.PartnerID <= 0 || usage.CustomerID <= 0 || usage.ProductID <= 0 {
+			log.Printf("❌ Erro ao inserir uso #%d: IDs inválidos (Partner: %d, Customer: %d, Product: %d)", 
+				i+1, usage.PartnerID, usage.CustomerID, usage.ProductID)
 			return fmt.Errorf("erro ao inserir uso #%d: IDs inválidos (Partner: %d, Customer: %d, Product: %d)", 
 				i+1, usage.PartnerID, usage.CustomerID, usage.ProductID)
 		}
@@ -533,6 +538,7 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 	// Usar transação para garantir consistência
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
+		log.Printf("❌ Erro ao iniciar transação: %v", err)
 		return fmt.Errorf("erro ao iniciar transação: %w", err)
 	}
 	defer tx.Rollback(ctx)
@@ -558,14 +564,17 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 	)
 
 	if err != nil {
+		log.Printf("❌ Erro ao inserir usos em lote: %v", err)
 		return fmt.Errorf("erro ao inserir usos em lote: %w", err)
 	}
 
 	// Commit da transação
 	if err := tx.Commit(ctx); err != nil {
+		log.Printf("❌ Erro ao finalizar transação: %v", err)
 		return fmt.Errorf("erro ao finalizar transação: %w", err)
 	}
 
+	log.Printf("✅ Inserção em lote concluída com sucesso: %d registros", len(usages))
 	return nil
 }
 

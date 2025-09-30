@@ -153,6 +153,10 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 	// Inserir partners individualmente para obter IDs
 	partnerIDMap := make(map[string]int)
 	for i := range partners {
+		if partners[i].PartnerID == "" {
+			fmt.Printf("⚠️ Ignorando parceiro com ID vazio na posição %d\n", i)
+			continue
+		}
 		if err := s.repo.InsertPartner(ctx, &partners[i]); err != nil {
 			fmt.Printf("⚠️ Aviso ao inserir parceiro %s: %v\n", partners[i].PartnerID, err)
 		} else {
@@ -164,6 +168,10 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 	// Inserir customers individualmente para obter IDs
 	customerIDMap := make(map[string]int)
 	for i := range customers {
+		if customers[i].CustomerID == "" {
+			fmt.Printf("⚠️ Ignorando cliente com ID vazio na posição %d\n", i)
+			continue
+		}
 		if err := s.repo.InsertCustomer(ctx, &customers[i]); err != nil {
 			fmt.Printf("⚠️ Aviso ao inserir cliente %s: %v\n", customers[i].CustomerID, err)
 		} else {
@@ -175,6 +183,10 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 	// Inserir products individualmente para obter IDs
 	productIDMap := make(map[string]int)
 	for i := range products {
+		if products[i].ProductID == "" {
+			fmt.Printf("⚠️ Ignorando produto com ID vazio na posição %d\n", i)
+			continue
+		}
 		if err := s.repo.InsertProduct(ctx, &products[i]); err != nil {
 			fmt.Printf("⚠️ Aviso ao inserir produto %s: %v\n", products[i].ProductID, err)
 		} else {
@@ -186,6 +198,11 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 	// Verificar se temos IDs mapeados
 	fmt.Printf("🔄 Mapeamento de IDs: %d partners, %d customers, %d products\n", 
 		len(partnerIDMap), len(customerIDMap), len(productIDMap))
+
+	// Verificar se temos pelo menos alguns IDs mapeados
+	if len(partnerIDMap) == 0 || len(customerIDMap) == 0 || len(productIDMap) == 0 {
+		fmt.Printf("⚠️ Aviso: Um ou mais mapas de ID estão vazios. Isso pode causar problemas na importação.\n")
+	}
 
 	// Atualizar usages com os IDs corretos
 	validUsages := make([]models.Usage, 0, len(usages))
@@ -220,10 +237,16 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 		}
 		usages[i].ProductID = productID
 
+		// Verificar se a quantidade é válida
+		if usages[i].Quantity <= 0 {
+			fmt.Printf("⚠️ Usage ignorado: quantidade inválida %.2f (linha %d)\n", usages[i].Quantity, i+1)
+			continue
+		}
+
 		// Adicionar à lista de usages válidos
 		validUsages = append(validUsages, usages[i])
-		fmt.Printf("✅ Usage mapeado: Partner=%d, Customer=%d, Product=%d\n", 
-			usages[i].PartnerID, usages[i].CustomerID, usages[i].ProductID)
+		fmt.Printf("✅ Usage mapeado: Partner=%d, Customer=%d, Product=%d, Quantidade=%f\n", 
+			usages[i].PartnerID, usages[i].CustomerID, usages[i].ProductID, usages[i].Quantity)
 	}
 
 	// Inserir usages em lote
