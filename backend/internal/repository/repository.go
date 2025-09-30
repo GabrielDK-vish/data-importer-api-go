@@ -566,20 +566,59 @@ func (r *Repository) InsertUsage(ctx context.Context, usage *models.Usage) error
 // BulkInsertUsages insere múltiplos registros de uso em lote
 func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage) error {
 	if len(usages) == 0 {
+		fmt.Println("⚠️ Nenhum registro de uso para inserir")
 		return nil
 	}
 
+	fmt.Printf("🔄 Iniciando inserção em lote de %d registros de uso\n", len(usages))
+
 	// Validar IDs antes de inserir
+	validUsages := make([]models.Usage, 0, len(usages))
 	for i, usage := range usages {
 		if usage.PartnerID <= 0 || usage.CustomerID <= 0 || usage.ProductID <= 0 {
-			return fmt.Errorf("erro ao inserir uso #%d: IDs inválidos (Partner: %d, Customer: %d, Product: %d)", 
+			fmt.Printf("⚠️ Ignorando uso #%d: IDs inválidos (Partner: %d, Customer: %d, Product: %d)\n", 
 				i+1, usage.PartnerID, usage.CustomerID, usage.ProductID)
+			continue
+		}
+		validUsages = append(validUsages, usage)
+	}
+
+	if len(validUsages) == 0 {
+		fmt.Println("⚠️ Nenhum registro de uso válido para inserir após validação")
+		return nil
+	}
+
+	fmt.Printf("✅ %d registros de uso válidos para inserção\n", len(validUsages))
+
+	// Verificar se os IDs existem no banco de dados
+	for i, usage := range validUsages {
+		var partnerExists, customerExists, productExists bool
+		
+		err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM partners WHERE id = $1)", usage.PartnerID).Scan(&partnerExists)
+		if err != nil {
+			fmt.Printf("⚠️ Erro ao verificar partner_id %d: %v\n", usage.PartnerID, err)
+		}
+		
+		err = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM customers WHERE id = $1)", usage.CustomerID).Scan(&customerExists)
+		if err != nil {
+			fmt.Printf("⚠️ Erro ao verificar customer_id %d: %v\n", usage.CustomerID, err)
+		}
+		
+		err = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM products WHERE id = $1)", usage.ProductID).Scan(&productExists)
+		if err != nil {
+			fmt.Printf("⚠️ Erro ao verificar product_id %d: %v\n", usage.ProductID, err)
+		}
+		
+		if !partnerExists || !customerExists || !productExists {
+			fmt.Printf("⚠️ Ignorando uso #%d: IDs não existem no banco (Partner: %v, Customer: %v, Product: %v)\n", 
+				i+1, partnerExists, customerExists, productExists)
+			continue
 		}
 	}
 
-	rows := make([][]interface{}, len(usages))
+	rows := make([][]interface{}, len(validUsages))
 
-	for i, usage := range usages {
+	for i, usage := range validUsages {
 		var chargeStartDate, usageDate interface{}
 		if usage.ChargeStartDate.Valid {
 			chargeStartDate = usage.ChargeStartDate.Time
@@ -612,10 +651,14 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 	// Usar transação para garantir consistência
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
+		fmt.Printf("❌ Erro ao iniciar transação: %v\n", err)
 		return fmt.Errorf("erro ao iniciar transação: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
+	fmt.Println("🔄 Executando inserção em lote...")
+	
+	// Tentar inserir cada registro individualmente se o CopyFrom falhar
 	_, err = tx.CopyFrom(
 		ctx,
 		pgx.Identifier{"usages"},
@@ -637,14 +680,48 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 	)
 
 	if err != nil {
+		fmt.Printf("❌ Erro ao inserir usos em lote: %v\n", err)
+		fmt.Println("🔄 Tentando inserção individual...")
+		
+		// Tentar inserir cada registro individualmente
+		for i, usage := range validUsages {
+			_, err := r.db.Exec(ctx, `
+				INSERT INTO usages (
+					invoice_number, charge_start_date, usage_date, quantity, unit_price, 
+					billing_pre_tax_total, resource_location, tags, benefit_type, 
+					partner_id, customer_id, product_id
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			`, 
+			usage.InvoiceNumber, 
+			usage.ChargeStartDate, 
+			usage.UsageDate, 
+			usage.Quantity, 
+			usage.UnitPrice, 
+			usage.BillingPreTaxTotal, 
+			usage.ResourceLocation, 
+			usage.Tags, 
+			usage.BenefitType, 
+			usage.PartnerID, 
+			usage.CustomerID, 
+			usage.ProductID)
+			
+			if err != nil {
+				fmt.Printf("❌ Erro ao inserir uso #%d individualmente: %v\n", i+1, err)
+			} else {
+				fmt.Printf("✅ Uso #%d inserido com sucesso\n", i+1)
+			}
+		}
+		
 		return fmt.Errorf("erro ao inserir usos em lote: %w", err)
 	}
 
 	// Commit da transação
 	if err := tx.Commit(ctx); err != nil {
+		fmt.Printf("❌ Erro ao finalizar transação: %v\n", err)
 		return fmt.Errorf("erro ao finalizar transação: %w", err)
 	}
 
+	fmt.Printf("✅ Inserção em lote concluída com sucesso! %d registros inseridos\n", len(validUsages))
 	return nil
 }
 

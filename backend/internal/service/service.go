@@ -150,11 +150,64 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 	fmt.Printf("🔍 Processando importação: %d partners, %d customers, %d products, %d usages\n", 
 		len(partners), len(customers), len(products), len(usages))
 
+	// Pré-carregar IDs existentes para evitar duplicações
+	existingPartnerIDMap := make(map[string]int)
+	existingCustomerIDMap := make(map[string]int)
+	existingProductIDMap := make(map[string]int)
+
+	// Carregar partners existentes
+	existingPartners, err := s.repo.GetAllPartners(ctx)
+	if err != nil {
+		fmt.Printf("⚠️ Aviso ao carregar partners existentes: %v\n", err)
+	} else {
+		for _, p := range existingPartners {
+			existingPartnerIDMap[p.PartnerID] = p.ID
+		}
+		fmt.Printf("📊 Carregados %d partners existentes\n", len(existingPartnerIDMap))
+	}
+
+	// Carregar customers existentes
+	existingCustomers, err := s.repo.GetAllCustomers(ctx)
+	if err != nil {
+		fmt.Printf("⚠️ Aviso ao carregar customers existentes: %v\n", err)
+	} else {
+		for _, c := range existingCustomers {
+			existingCustomerIDMap[c.CustomerID] = c.ID
+		}
+		fmt.Printf("📊 Carregados %d customers existentes\n", len(existingCustomerIDMap))
+	}
+
+	// Carregar products existentes
+	existingProducts, err := s.repo.GetAllProducts(ctx)
+	if err != nil {
+		fmt.Printf("⚠️ Aviso ao carregar products existentes: %v\n", err)
+	} else {
+		for _, p := range existingProducts {
+			existingProductIDMap[p.ProductID] = p.ID
+		}
+		fmt.Printf("📊 Carregados %d products existentes\n", len(existingProductIDMap))
+	}
+
 	// Inserir partners individualmente para obter IDs
 	partnerIDMap := make(map[string]int)
 	for i := range partners {
+		// Verificar se o partner já existe
+		if id, exists := existingPartnerIDMap[partners[i].PartnerID]; exists {
+			partnerIDMap[partners[i].PartnerID] = id
+			fmt.Printf("🔄 Partner já existe: %s (ID: %d)\n", partners[i].PartnerID, id)
+			continue
+		}
+
 		if err := s.repo.InsertPartner(ctx, &partners[i]); err != nil {
 			fmt.Printf("⚠️ Aviso ao inserir parceiro %s: %v\n", partners[i].PartnerID, err)
+			
+			// Tentar buscar o partner no banco de dados em caso de erro
+			var partner models.Partner
+			err := s.repo.GetPartnerByPartnerID(ctx, partners[i].PartnerID, &partner)
+			if err == nil {
+				partnerIDMap[partners[i].PartnerID] = partner.ID
+				fmt.Printf("🔍 Partner ID recuperado após erro: %s -> %d\n", partners[i].PartnerID, partner.ID)
+			}
 		} else {
 			partnerIDMap[partners[i].PartnerID] = partners[i].ID
 			fmt.Printf("✅ Partner inserido: %s (ID: %d)\n", partners[i].PartnerID, partners[i].ID)
@@ -164,8 +217,23 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 	// Inserir customers individualmente para obter IDs
 	customerIDMap := make(map[string]int)
 	for i := range customers {
+		// Verificar se o customer já existe
+		if id, exists := existingCustomerIDMap[customers[i].CustomerID]; exists {
+			customerIDMap[customers[i].CustomerID] = id
+			fmt.Printf("🔄 Customer já existe: %s (ID: %d)\n", customers[i].CustomerID, id)
+			continue
+		}
+
 		if err := s.repo.InsertCustomer(ctx, &customers[i]); err != nil {
 			fmt.Printf("⚠️ Aviso ao inserir cliente %s: %v\n", customers[i].CustomerID, err)
+			
+			// Tentar buscar o customer no banco de dados em caso de erro
+			var customer models.Customer
+			err := s.repo.GetCustomerByCustomerID(ctx, customers[i].CustomerID, &customer)
+			if err == nil {
+				customerIDMap[customers[i].CustomerID] = customer.ID
+				fmt.Printf("🔍 Customer ID recuperado após erro: %s -> %d\n", customers[i].CustomerID, customer.ID)
+			}
 		} else {
 			customerIDMap[customers[i].CustomerID] = customers[i].ID
 			fmt.Printf("✅ Customer inserido: %s (ID: %d)\n", customers[i].CustomerID, customers[i].ID)
@@ -175,8 +243,23 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 	// Inserir products individualmente para obter IDs
 	productIDMap := make(map[string]int)
 	for i := range products {
+		// Verificar se o product já existe
+		if id, exists := existingProductIDMap[products[i].ProductID]; exists {
+			productIDMap[products[i].ProductID] = id
+			fmt.Printf("🔄 Product já existe: %s (ID: %d)\n", products[i].ProductID, id)
+			continue
+		}
+
 		if err := s.repo.InsertProduct(ctx, &products[i]); err != nil {
 			fmt.Printf("⚠️ Aviso ao inserir produto %s: %v\n", products[i].ProductID, err)
+			
+			// Tentar buscar o product no banco de dados em caso de erro
+			var product models.Product
+			err := s.repo.GetProductByProductID(ctx, products[i].ProductID, &product)
+			if err == nil {
+				productIDMap[products[i].ProductID] = product.ID
+				fmt.Printf("🔍 Product ID recuperado após erro: %s -> %d\n", products[i].ProductID, product.ID)
+			}
 		} else {
 			productIDMap[products[i].ProductID] = products[i].ID
 			fmt.Printf("✅ Product inserido: %s (ID: %d)\n", products[i].ProductID, products[i].ID)
@@ -199,50 +282,78 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 		// Buscar partner_id baseado no partner_id do usage
 		partnerID, partnerExists := partnerIDMap[usages[i].PartnerIDStr]
 		if !partnerExists {
-			// Tentar buscar o partner no banco de dados
-			var partner models.Partner
-			err := s.repo.GetPartnerByPartnerID(ctx, usages[i].PartnerIDStr, &partner)
-			if err != nil {
-				fmt.Printf("⚠️ Partner ID não encontrado para: %s (linha %d)\n", usages[i].PartnerIDStr, i+1)
-				continue
+			// Verificar no mapa de partners existentes
+			if id, exists := existingPartnerIDMap[usages[i].PartnerIDStr]; exists {
+				partnerID = id
+				partnerIDMap[usages[i].PartnerIDStr] = id
+				fmt.Printf("🔍 Partner ID encontrado no mapa existente: %s -> %d\n", usages[i].PartnerIDStr, id)
+			} else {
+				// Tentar buscar o partner no banco de dados
+				var partner models.Partner
+				err := s.repo.GetPartnerByPartnerID(ctx, usages[i].PartnerIDStr, &partner)
+				if err != nil {
+					fmt.Printf("⚠️ Partner ID não encontrado para: %s (linha %d)\n", usages[i].PartnerIDStr, i+1)
+					continue
+				}
+				partnerID = partner.ID
+				partnerIDMap[usages[i].PartnerIDStr] = partnerID
+				fmt.Printf("🔍 Partner ID encontrado no banco: %s -> %d\n", usages[i].PartnerIDStr, partnerID)
 			}
-			partnerID = partner.ID
-			partnerIDMap[usages[i].PartnerIDStr] = partnerID
-			fmt.Printf("🔍 Partner ID encontrado no banco: %s -> %d\n", usages[i].PartnerIDStr, partnerID)
 		}
 		usages[i].PartnerID = partnerID
 		
 		// Buscar customer_id baseado no customer_id do usage
 		customerID, customerExists := customerIDMap[usages[i].CustomerIDStr]
 		if !customerExists {
-			// Tentar buscar o customer no banco de dados
-			var customer models.Customer
-			err := s.repo.GetCustomerByCustomerID(ctx, usages[i].CustomerIDStr, &customer)
-			if err != nil {
-				fmt.Printf("⚠️ Customer ID não encontrado para: %s (linha %d)\n", usages[i].CustomerIDStr, i+1)
-				continue
+			// Verificar no mapa de customers existentes
+			if id, exists := existingCustomerIDMap[usages[i].CustomerIDStr]; exists {
+				customerID = id
+				customerIDMap[usages[i].CustomerIDStr] = id
+				fmt.Printf("🔍 Customer ID encontrado no mapa existente: %s -> %d\n", usages[i].CustomerIDStr, id)
+			} else {
+				// Tentar buscar o customer no banco de dados
+				var customer models.Customer
+				err := s.repo.GetCustomerByCustomerID(ctx, usages[i].CustomerIDStr, &customer)
+				if err != nil {
+					fmt.Printf("⚠️ Customer ID não encontrado para: %s (linha %d)\n", usages[i].CustomerIDStr, i+1)
+					continue
+				}
+				customerID = customer.ID
+				customerIDMap[usages[i].CustomerIDStr] = customerID
+				fmt.Printf("🔍 Customer ID encontrado no banco: %s -> %d\n", usages[i].CustomerIDStr, customerID)
 			}
-			customerID = customer.ID
-			customerIDMap[usages[i].CustomerIDStr] = customerID
-			fmt.Printf("🔍 Customer ID encontrado no banco: %s -> %d\n", usages[i].CustomerIDStr, customerID)
 		}
 		usages[i].CustomerID = customerID
 		
 		// Buscar product_id baseado no product_id do usage
 		productID, productExists := productIDMap[usages[i].ProductIDStr]
 		if !productExists {
-			// Tentar buscar o product no banco de dados
-			var product models.Product
-			err := s.repo.GetProductByProductID(ctx, usages[i].ProductIDStr, &product)
-			if err != nil {
-				fmt.Printf("⚠️ Product ID não encontrado para: %s (linha %d)\n", usages[i].ProductIDStr, i+1)
-				continue
+			// Verificar no mapa de products existentes
+			if id, exists := existingProductIDMap[usages[i].ProductIDStr]; exists {
+				productID = id
+				productIDMap[usages[i].ProductIDStr] = id
+				fmt.Printf("🔍 Product ID encontrado no mapa existente: %s -> %d\n", usages[i].ProductIDStr, id)
+			} else {
+				// Tentar buscar o product no banco de dados
+				var product models.Product
+				err := s.repo.GetProductByProductID(ctx, usages[i].ProductIDStr, &product)
+				if err != nil {
+					fmt.Printf("⚠️ Product ID não encontrado para: %s (linha %d)\n", usages[i].ProductIDStr, i+1)
+					continue
+				}
+				productID = product.ID
+				productIDMap[usages[i].ProductIDStr] = productID
+				fmt.Printf("🔍 Product ID encontrado no banco: %s -> %d\n", usages[i].ProductIDStr, productID)
 			}
-			productID = product.ID
-			productIDMap[usages[i].ProductIDStr] = productID
-			fmt.Printf("🔍 Product ID encontrado no banco: %s -> %d\n", usages[i].ProductIDStr, productID)
 		}
 		usages[i].ProductID = productID
+
+		// Validar IDs finais
+		if usages[i].PartnerID <= 0 || usages[i].CustomerID <= 0 || usages[i].ProductID <= 0 {
+			fmt.Printf("⚠️ Usage ignorado: IDs inválidos após mapeamento (Partner: %d, Customer: %d, Product: %d)\n", 
+				usages[i].PartnerID, usages[i].CustomerID, usages[i].ProductID)
+			continue
+		}
 
 		// Adicionar à lista de usages válidos
 		validUsages = append(validUsages, usages[i])
