@@ -199,24 +199,48 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 		// Buscar partner_id baseado no partner_id do usage
 		partnerID, partnerExists := partnerIDMap[usages[i].PartnerIDStr]
 		if !partnerExists {
-			fmt.Printf("⚠️ Partner ID não encontrado para: %s (linha %d)\n", usages[i].PartnerIDStr, i+1)
-			continue
+			// Tentar buscar o partner no banco de dados
+			var partner models.Partner
+			err := s.repo.GetPartnerByPartnerID(ctx, usages[i].PartnerIDStr, &partner)
+			if err != nil {
+				fmt.Printf("⚠️ Partner ID não encontrado para: %s (linha %d)\n", usages[i].PartnerIDStr, i+1)
+				continue
+			}
+			partnerID = partner.ID
+			partnerIDMap[usages[i].PartnerIDStr] = partnerID
+			fmt.Printf("🔍 Partner ID encontrado no banco: %s -> %d\n", usages[i].PartnerIDStr, partnerID)
 		}
 		usages[i].PartnerID = partnerID
 		
 		// Buscar customer_id baseado no customer_id do usage
 		customerID, customerExists := customerIDMap[usages[i].CustomerIDStr]
 		if !customerExists {
-			fmt.Printf("⚠️ Customer ID não encontrado para: %s (linha %d)\n", usages[i].CustomerIDStr, i+1)
-			continue
+			// Tentar buscar o customer no banco de dados
+			var customer models.Customer
+			err := s.repo.GetCustomerByCustomerID(ctx, usages[i].CustomerIDStr, &customer)
+			if err != nil {
+				fmt.Printf("⚠️ Customer ID não encontrado para: %s (linha %d)\n", usages[i].CustomerIDStr, i+1)
+				continue
+			}
+			customerID = customer.ID
+			customerIDMap[usages[i].CustomerIDStr] = customerID
+			fmt.Printf("🔍 Customer ID encontrado no banco: %s -> %d\n", usages[i].CustomerIDStr, customerID)
 		}
 		usages[i].CustomerID = customerID
 		
 		// Buscar product_id baseado no product_id do usage
 		productID, productExists := productIDMap[usages[i].ProductIDStr]
 		if !productExists {
-			fmt.Printf("⚠️ Product ID não encontrado para: %s (linha %d)\n", usages[i].ProductIDStr, i+1)
-			continue
+			// Tentar buscar o product no banco de dados
+			var product models.Product
+			err := s.repo.GetProductByProductID(ctx, usages[i].ProductIDStr, &product)
+			if err != nil {
+				fmt.Printf("⚠️ Product ID não encontrado para: %s (linha %d)\n", usages[i].ProductIDStr, i+1)
+				continue
+			}
+			productID = product.ID
+			productIDMap[usages[i].ProductIDStr] = productID
+			fmt.Printf("🔍 Product ID encontrado no banco: %s -> %d\n", usages[i].ProductIDStr, productID)
 		}
 		usages[i].ProductID = productID
 

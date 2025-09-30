@@ -74,6 +74,85 @@ func parseUsageDate(s string) (time.Time, error) {
     return time.Time{}, fmt.Errorf("formato de data inválido: %s", s)
 }
 
+// GetPartnerByPartnerID busca um parceiro pelo partner_id
+func (r *Repository) GetPartnerByPartnerID(ctx context.Context, partnerID string, partner *models.Partner) error {
+	query := `
+		SELECT id, partner_id, partner_name, mpn_id, tier2_mpn_id, created_at, updated_at
+		FROM partners
+		WHERE partner_id = $1
+	`
+	
+	err := r.db.QueryRow(ctx, query, partnerID).Scan(
+		&partner.ID,
+		&partner.PartnerID,
+		&partner.PartnerName,
+		&partner.MpnID,
+		&partner.Tier2MpnID,
+		&partner.CreatedAt,
+		&partner.UpdatedAt,
+	)
+	
+	if err != nil {
+		return fmt.Errorf("erro ao buscar parceiro por partner_id: %w", err)
+	}
+	
+	return nil
+}
+
+// GetCustomerByCustomerID busca um cliente pelo customer_id
+func (r *Repository) GetCustomerByCustomerID(ctx context.Context, customerID string, customer *models.Customer) error {
+	query := `
+		SELECT id, customer_id, customer_name, customer_domain_name, country, created_at, updated_at
+		FROM customers
+		WHERE customer_id = $1
+	`
+	
+	err := r.db.QueryRow(ctx, query, customerID).Scan(
+		&customer.ID,
+		&customer.CustomerID,
+		&customer.CustomerName,
+		&customer.CustomerDomainName,
+		&customer.Country,
+		&customer.CreatedAt,
+		&customer.UpdatedAt,
+	)
+	
+	if err != nil {
+		return fmt.Errorf("erro ao buscar cliente por customer_id: %w", err)
+	}
+	
+	return nil
+}
+
+// GetProductByProductID busca um produto pelo product_id
+func (r *Repository) GetProductByProductID(ctx context.Context, productID string, product *models.Product) error {
+	query := `
+		SELECT id, product_id, sku_id, sku_name, product_name, meter_type, category, sub_category, unit_type, created_at, updated_at
+		FROM products
+		WHERE product_id = $1
+	`
+	
+	err := r.db.QueryRow(ctx, query, productID).Scan(
+		&product.ID,
+		&product.ProductID,
+		&product.SkuID,
+		&product.SkuName,
+		&product.ProductName,
+		&product.MeterType,
+		&product.Category,
+		&product.SubCategory,
+		&product.UnitType,
+		&product.CreatedAt,
+		&product.UpdatedAt,
+	)
+	
+	if err != nil {
+		return fmt.Errorf("erro ao buscar produto por product_id: %w", err)
+	}
+	
+	return nil
+}
+
 
 // GetUsageByCustomer retorna o uso de um cliente específico
 func (r *Repository) GetUsageByCustomer(ctx context.Context, customerID int) ([]models.Usage, error) {
