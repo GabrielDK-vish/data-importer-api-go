@@ -65,8 +65,9 @@ func (h *Handler) SetupRoutes() *chi.Mux {
 		r.Get("/reports/billing/by-customer", h.BillingByCustomerHandler)
 		r.Get("/reports/kpi", h.KPIHandler)
 		
-		// Upload
-		r.Post("/upload", h.UploadFileHandler)
+		// Upload - usando o handler correto
+		uploadHandler := NewUploadHandler(h.service)
+		r.Post("/upload", uploadHandler.UploadFileHandler)
 	})
 
 	return r

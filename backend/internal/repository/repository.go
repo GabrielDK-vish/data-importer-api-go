@@ -74,85 +74,6 @@ func parseUsageDate(s string) (time.Time, error) {
     return time.Time{}, fmt.Errorf("formato de data inválido: %s", s)
 }
 
-// GetPartnerByPartnerID busca um parceiro pelo partner_id
-func (r *Repository) GetPartnerByPartnerID(ctx context.Context, partnerID string, partner *models.Partner) error {
-	query := `
-		SELECT id, partner_id, partner_name, mpn_id, tier2_mpn_id, created_at, updated_at
-		FROM partners
-		WHERE partner_id = $1
-	`
-	
-	err := r.db.QueryRow(ctx, query, partnerID).Scan(
-		&partner.ID,
-		&partner.PartnerID,
-		&partner.PartnerName,
-		&partner.MpnID,
-		&partner.Tier2MpnID,
-		&partner.CreatedAt,
-		&partner.UpdatedAt,
-	)
-	
-	if err != nil {
-		return fmt.Errorf("erro ao buscar parceiro por partner_id: %w", err)
-	}
-	
-	return nil
-}
-
-// GetCustomerByCustomerID busca um cliente pelo customer_id
-func (r *Repository) GetCustomerByCustomerID(ctx context.Context, customerID string, customer *models.Customer) error {
-	query := `
-		SELECT id, customer_id, customer_name, customer_domain_name, country, created_at, updated_at
-		FROM customers
-		WHERE customer_id = $1
-	`
-	
-	err := r.db.QueryRow(ctx, query, customerID).Scan(
-		&customer.ID,
-		&customer.CustomerID,
-		&customer.CustomerName,
-		&customer.CustomerDomainName,
-		&customer.Country,
-		&customer.CreatedAt,
-		&customer.UpdatedAt,
-	)
-	
-	if err != nil {
-		return fmt.Errorf("erro ao buscar cliente por customer_id: %w", err)
-	}
-	
-	return nil
-}
-
-// GetProductByProductID busca um produto pelo product_id
-func (r *Repository) GetProductByProductID(ctx context.Context, productID string, product *models.Product) error {
-	query := `
-		SELECT id, product_id, sku_id, sku_name, product_name, meter_type, category, sub_category, unit_type, created_at, updated_at
-		FROM products
-		WHERE product_id = $1
-	`
-	
-	err := r.db.QueryRow(ctx, query, productID).Scan(
-		&product.ID,
-		&product.ProductID,
-		&product.SkuID,
-		&product.SkuName,
-		&product.ProductName,
-		&product.MeterType,
-		&product.Category,
-		&product.SubCategory,
-		&product.UnitType,
-		&product.CreatedAt,
-		&product.UpdatedAt,
-	)
-	
-	if err != nil {
-		return fmt.Errorf("erro ao buscar produto por product_id: %w", err)
-	}
-	
-	return nil
-}
-
 
 // GetUsageByCustomer retorna o uso de um cliente específico
 func (r *Repository) GetUsageByCustomer(ctx context.Context, customerID int) ([]models.Usage, error) {
@@ -566,59 +487,20 @@ func (r *Repository) InsertUsage(ctx context.Context, usage *models.Usage) error
 // BulkInsertUsages insere múltiplos registros de uso em lote
 func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage) error {
 	if len(usages) == 0 {
-		fmt.Println("⚠️ Nenhum registro de uso para inserir")
 		return nil
 	}
-
-	fmt.Printf("🔄 Iniciando inserção em lote de %d registros de uso\n", len(usages))
 
 	// Validar IDs antes de inserir
-	validUsages := make([]models.Usage, 0, len(usages))
 	for i, usage := range usages {
 		if usage.PartnerID <= 0 || usage.CustomerID <= 0 || usage.ProductID <= 0 {
-			fmt.Printf("⚠️ Ignorando uso #%d: IDs inválidos (Partner: %d, Customer: %d, Product: %d)\n", 
+			return fmt.Errorf("erro ao inserir uso #%d: IDs inválidos (Partner: %d, Customer: %d, Product: %d)", 
 				i+1, usage.PartnerID, usage.CustomerID, usage.ProductID)
-			continue
-		}
-		validUsages = append(validUsages, usage)
-	}
-
-	if len(validUsages) == 0 {
-		fmt.Println("⚠️ Nenhum registro de uso válido para inserir após validação")
-		return nil
-	}
-
-	fmt.Printf("✅ %d registros de uso válidos para inserção\n", len(validUsages))
-
-	// Verificar se os IDs existem no banco de dados
-	for i, usage := range validUsages {
-		var partnerExists, customerExists, productExists bool
-		
-		err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM partners WHERE id = $1)", usage.PartnerID).Scan(&partnerExists)
-		if err != nil {
-			fmt.Printf("⚠️ Erro ao verificar partner_id %d: %v\n", usage.PartnerID, err)
-		}
-		
-		err = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM customers WHERE id = $1)", usage.CustomerID).Scan(&customerExists)
-		if err != nil {
-			fmt.Printf("⚠️ Erro ao verificar customer_id %d: %v\n", usage.CustomerID, err)
-		}
-		
-		err = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM products WHERE id = $1)", usage.ProductID).Scan(&productExists)
-		if err != nil {
-			fmt.Printf("⚠️ Erro ao verificar product_id %d: %v\n", usage.ProductID, err)
-		}
-		
-		if !partnerExists || !customerExists || !productExists {
-			fmt.Printf("⚠️ Ignorando uso #%d: IDs não existem no banco (Partner: %v, Customer: %v, Product: %v)\n", 
-				i+1, partnerExists, customerExists, productExists)
-			continue
 		}
 	}
 
-	rows := make([][]interface{}, len(validUsages))
+	rows := make([][]interface{}, len(usages))
 
-	for i, usage := range validUsages {
+	for i, usage := range usages {
 		var chargeStartDate, usageDate interface{}
 		if usage.ChargeStartDate.Valid {
 			chargeStartDate = usage.ChargeStartDate.Time
@@ -651,14 +533,10 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 	// Usar transação para garantir consistência
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
-		fmt.Printf("❌ Erro ao iniciar transação: %v\n", err)
 		return fmt.Errorf("erro ao iniciar transação: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	fmt.Println("🔄 Executando inserção em lote...")
-	
-	// Tentar inserir cada registro individualmente se o CopyFrom falhar
 	_, err = tx.CopyFrom(
 		ctx,
 		pgx.Identifier{"usages"},
@@ -680,48 +558,14 @@ func (r *Repository) BulkInsertUsages(ctx context.Context, usages []models.Usage
 	)
 
 	if err != nil {
-		fmt.Printf("❌ Erro ao inserir usos em lote: %v\n", err)
-		fmt.Println("🔄 Tentando inserção individual...")
-		
-		// Tentar inserir cada registro individualmente
-		for i, usage := range validUsages {
-			_, err := r.db.Exec(ctx, `
-				INSERT INTO usages (
-					invoice_number, charge_start_date, usage_date, quantity, unit_price, 
-					billing_pre_tax_total, resource_location, tags, benefit_type, 
-					partner_id, customer_id, product_id
-				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-			`, 
-			usage.InvoiceNumber, 
-			usage.ChargeStartDate, 
-			usage.UsageDate, 
-			usage.Quantity, 
-			usage.UnitPrice, 
-			usage.BillingPreTaxTotal, 
-			usage.ResourceLocation, 
-			usage.Tags, 
-			usage.BenefitType, 
-			usage.PartnerID, 
-			usage.CustomerID, 
-			usage.ProductID)
-			
-			if err != nil {
-				fmt.Printf("❌ Erro ao inserir uso #%d individualmente: %v\n", i+1, err)
-			} else {
-				fmt.Printf("✅ Uso #%d inserido com sucesso\n", i+1)
-			}
-		}
-		
 		return fmt.Errorf("erro ao inserir usos em lote: %w", err)
 	}
 
 	// Commit da transação
 	if err := tx.Commit(ctx); err != nil {
-		fmt.Printf("❌ Erro ao finalizar transação: %v\n", err)
 		return fmt.Errorf("erro ao finalizar transação: %w", err)
 	}
 
-	fmt.Printf("✅ Inserção em lote concluída com sucesso! %d registros inseridos\n", len(validUsages))
 	return nil
 }
 
