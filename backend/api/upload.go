@@ -214,7 +214,7 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 		"ResourceCategory":  "category",
 		"ResourceSubcategory": "sub_category",
 		"BenefitType":       "benefit_type",
-		"Tags":              "tags"
+		"Tags":              "tags",
 	}
 
 	// Mapear colunas do cabeçalho para os nomes internos
