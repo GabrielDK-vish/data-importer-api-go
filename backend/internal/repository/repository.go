@@ -4,6 +4,7 @@ import (
 	"context"
 	"data-importer-api-go/internal/models"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
