@@ -324,6 +324,9 @@ func parseExcelRow(record []string, columnMap map[string]int, rowNum int) (*mode
 		PartnerID:          0, // Será preenchido após inserção
 		CustomerID:         0, // Será preenchido após inserção
 		ProductID:          0, // Será preenchido após inserção
+		PartnerIDStr:       partner.PartnerID,    // Adicionado para mapeamento
+		CustomerIDStr:      customer.CustomerID,  // Adicionado para mapeamento
+		ProductIDStr:       product.ProductID,    // Adicionado para mapeamento
 	}
 
 	return partner, customer, product, usage, nil

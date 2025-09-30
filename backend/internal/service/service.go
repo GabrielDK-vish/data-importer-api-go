@@ -147,13 +147,17 @@ func (s *Service) GetBillingByPartner(ctx context.Context) ([]models.BillingByPa
 
 // ProcessImportData processa dados de importação com inserção em lote
 func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partner, customers []models.Customer, products []models.Product, usages []models.Usage) error {
+	fmt.Printf("🔍 Processando importação: %d partners, %d customers, %d products, %d usages\n", 
+		len(partners), len(customers), len(products), len(usages))
+
 	// Inserir partners individualmente para obter IDs
 	partnerIDMap := make(map[string]int)
 	for i := range partners {
 		if err := s.repo.InsertPartner(ctx, &partners[i]); err != nil {
-			fmt.Printf("Aviso ao inserir parceiro %s: %v\n", partners[i].PartnerID, err)
+			fmt.Printf("⚠️ Aviso ao inserir parceiro %s: %v\n", partners[i].PartnerID, err)
 		} else {
 			partnerIDMap[partners[i].PartnerID] = partners[i].ID
+			fmt.Printf("✅ Partner inserido: %s (ID: %d)\n", partners[i].PartnerID, partners[i].ID)
 		}
 	}
 
@@ -161,9 +165,10 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 	customerIDMap := make(map[string]int)
 	for i := range customers {
 		if err := s.repo.InsertCustomer(ctx, &customers[i]); err != nil {
-			fmt.Printf("Aviso ao inserir cliente %s: %v\n", customers[i].CustomerID, err)
+			fmt.Printf("⚠️ Aviso ao inserir cliente %s: %v\n", customers[i].CustomerID, err)
 		} else {
 			customerIDMap[customers[i].CustomerID] = customers[i].ID
+			fmt.Printf("✅ Customer inserido: %s (ID: %d)\n", customers[i].CustomerID, customers[i].ID)
 		}
 	}
 
@@ -171,35 +176,66 @@ func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partn
 	productIDMap := make(map[string]int)
 	for i := range products {
 		if err := s.repo.InsertProduct(ctx, &products[i]); err != nil {
-			fmt.Printf("Aviso ao inserir produto %s: %v\n", products[i].ProductID, err)
+			fmt.Printf("⚠️ Aviso ao inserir produto %s: %v\n", products[i].ProductID, err)
 		} else {
 			productIDMap[products[i].ProductID] = products[i].ID
+			fmt.Printf("✅ Product inserido: %s (ID: %d)\n", products[i].ProductID, products[i].ID)
 		}
 	}
 
+	// Verificar se temos IDs mapeados
+	fmt.Printf("🔄 Mapeamento de IDs: %d partners, %d customers, %d products\n", 
+		len(partnerIDMap), len(customerIDMap), len(productIDMap))
+
 	// Atualizar usages com os IDs corretos
+	validUsages := make([]models.Usage, 0, len(usages))
 	for i := range usages {
-		// Buscar partner_id baseado no partner_id do usage
-		if partnerID, exists := partnerIDMap[usages[i].PartnerIDStr]; exists {
-			usages[i].PartnerID = partnerID
+		// Verificar se temos os campos temporários preenchidos
+		if usages[i].PartnerIDStr == "" || usages[i].CustomerIDStr == "" || usages[i].ProductIDStr == "" {
+			fmt.Printf("⚠️ Usage ignorado: campos de ID temporários vazios (linha %d)\n", i+1)
+			continue
 		}
+
+		// Buscar partner_id baseado no partner_id do usage
+		partnerID, partnerExists := partnerIDMap[usages[i].PartnerIDStr]
+		if !partnerExists {
+			fmt.Printf("⚠️ Partner ID não encontrado para: %s (linha %d)\n", usages[i].PartnerIDStr, i+1)
+			continue
+		}
+		usages[i].PartnerID = partnerID
 		
 		// Buscar customer_id baseado no customer_id do usage
-		if customerID, exists := customerIDMap[usages[i].CustomerIDStr]; exists {
-			usages[i].CustomerID = customerID
+		customerID, customerExists := customerIDMap[usages[i].CustomerIDStr]
+		if !customerExists {
+			fmt.Printf("⚠️ Customer ID não encontrado para: %s (linha %d)\n", usages[i].CustomerIDStr, i+1)
+			continue
 		}
+		usages[i].CustomerID = customerID
 		
 		// Buscar product_id baseado no product_id do usage
-		if productID, exists := productIDMap[usages[i].ProductIDStr]; exists {
-			usages[i].ProductID = productID
+		productID, productExists := productIDMap[usages[i].ProductIDStr]
+		if !productExists {
+			fmt.Printf("⚠️ Product ID não encontrado para: %s (linha %d)\n", usages[i].ProductIDStr, i+1)
+			continue
 		}
+		usages[i].ProductID = productID
+
+		// Adicionar à lista de usages válidos
+		validUsages = append(validUsages, usages[i])
+		fmt.Printf("✅ Usage mapeado: Partner=%d, Customer=%d, Product=%d\n", 
+			usages[i].PartnerID, usages[i].CustomerID, usages[i].ProductID)
 	}
 
 	// Inserir usages em lote
-	if len(usages) > 0 {
-		if err := s.repo.BulkInsertUsages(ctx, usages); err != nil {
+	if len(validUsages) > 0 {
+		fmt.Printf("🚀 Inserindo %d usages válidos em lote\n", len(validUsages))
+		if err := s.repo.BulkInsertUsages(ctx, validUsages); err != nil {
+			fmt.Printf("❌ Erro ao inserir usos em lote: %v\n", err)
 			return fmt.Errorf("erro ao inserir usos em lote: %w", err)
 		}
+		fmt.Printf("✅ Inserção em lote concluída com sucesso!\n")
+	} else {
+		fmt.Printf("⚠️ Nenhum usage válido para inserir\n")
 	}
 
 	return nil
