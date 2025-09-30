@@ -205,6 +205,11 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 		"mpnid":                  "mpn_id",
 		"tier2mpnid":             "tier2_mpn_id",
 		"tier2mpn":               "tier2_mpn_id",
+		// Adicionando suporte para capitalização mista
+		"PartnerId":              "partner_id",
+		"PartnerName":            "partner_name",
+		"MpnId":                  "mpn_id",
+		"Tier2MpnId":             "tier2_mpn_id",
 		
 		// Customer fields
 		"customerid":             "customer_id",
@@ -212,6 +217,11 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 		"customerdomainname":     "customer_domain_name",
 		"customercountry":        "country",
 		"customerdomain":         "customer_domain_name",
+		// Adicionando suporte para capitalização mista
+		"CustomerId":             "customer_id",
+		"CustomerName":           "customer_name",
+		"CustomerDomainName":     "customer_domain_name",
+		"CustomerCountry":        "country",
 		
 		// Product fields
 		"productid":              "product_id",
@@ -226,6 +236,16 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 		"resourcelocation":       "resource_location",
 		"category":               "category",
 		"subcategory":            "sub_category",
+		// Adicionando suporte para capitalização mista
+		"ProductId":              "product_id",
+		"SkuId":                  "sku_id",
+		"SkuName":                "sku_name",
+		"ProductName":            "product_name",
+		"MeterType":              "meter_type",
+		"ResourceCategory":       "category",
+		"ResourceSubcategory":    "sub_category",
+		"UnitType":               "unit_type",
+		"ResourceLocation":       "resource_location",
 		
 		// Usage fields
 		"invoicenumber":          "invoice_number",
@@ -252,6 +272,25 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 		"credittype":             "credit_type",
 		"benefitorderid":         "benefit_order_id",
 		"benefitid":              "benefit_id",
+		// Adicionando suporte para capitalização mista
+		"InvoiceNumber":          "invoice_number",
+		"UsageDate":              "usage_date",
+		"ChargeStartDate":        "charge_start_date", 
+		"UnitPrice":              "unit_price",
+		"EffectiveUnitPrice":     "unit_price",
+		"Quantity":               "quantity",
+		"BillingPreTaxTotal":     "billing_pre_tax_total",
+		"BillingCurrency":        "billing_currency",
+		"BenefitType":            "benefit_type",
+		"Tags":                   "tags",
+		"AdditionalInfo":         "additional_info",
+		"EntitlementId":          "entitlement_id",
+		"EntitlementDescription": "entitlement_description",
+		"PartnerEarnedCreditPercentage": "partner_earned_credit_percentage",
+		"CreditPercentage":       "credit_percentage",
+		"CreditType":             "credit_type",
+		"BenefitOrderId":         "benefit_order_id",
+		"BenefitId":              "benefit_id",
 	}
 
 	for i, col := range header {
@@ -284,6 +323,19 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 		}
 	}
 	
+	// Verificar especificamente se usage_date está faltando e se charge_start_date está disponível
+	for i, missing := range missingColumns {
+		if missing == "usage_date" {
+			if _, exists := columnMap["charge_start_date"]; exists {
+				log.Printf("✅ Usando charge_start_date como fallback para usage_date")
+				columnMapping["usage_date"] = "charge_start_date"
+				// Remover usage_date da lista de colunas faltantes
+				missingColumns = append(missingColumns[:i], missingColumns[i+1:]...)
+				break
+			}
+		}
+	}
+
 	if len(missingColumns) > 0 {
 		log.Printf("⚠️  Colunas obrigatórias não encontradas: %v", missingColumns)
 		log.Printf("📋 Colunas disponíveis: %v", getAvailableColumns(header))
