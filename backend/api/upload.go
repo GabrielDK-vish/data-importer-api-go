@@ -190,56 +190,143 @@ func (h *UploadHandler) processRows(rows [][]string) ([]models.Partner, []models
 	log.Printf("📋 Cabeçalhos encontrados: %v", header)
 	columnMap := make(map[string]int)
 
-	// Mapeamento fixo para o arquivo específico "Reconfile fornecedores.xlsx"
-	// Baseado nas colunas fornecidas
-	fixedMapping := map[string]string{
-		"PartnerId":         "partner_id",
-		"PartnerName":       "partner_name",
-		"CustomerId":        "customer_id",
-		"CustomerName":      "customer_name",
-		"CustomerDomainName": "customer_domain_name",
-		"CustomerCountry":   "country",
-		"MpnId":             "mpn_id",
-		"Tier2MpnId":        "tier2_mpn_id",
-		"InvoiceNumber":     "invoice_number",
-		"ProductId":         "product_id",
-		"SkuId":             "sku_id",
-		"SkuName":           "sku_name",
-		"ProductName":       "product_name",
-		"ChargeStartDate":   "usage_date", // Mapeando ChargeStartDate como usage_date
-		"Quantity":          "quantity",
-		"UnitPrice":         "unit_price",
-		"BillingPreTaxTotal": "billing_pre_tax_total",
-		"ResourceLocation":  "resource_location",
-		"ResourceCategory":  "category",
-		"ResourceSubcategory": "sub_category",
-		"BenefitType":       "benefit_type",
-		"Tags":              "tags",
+	// Normalizar cabeçalhos e aplicar aliases
+	normalize := func(s string) string {
+		s = strings.ToLower(strings.TrimSpace(s))
+		s = strings.ReplaceAll(s, " ", "")
+		s = strings.ReplaceAll(s, "_", "")
+		s = strings.ReplaceAll(s, "-", "")
+		return s
+	}
+	alias := map[string]string{
+		// Partner fields
+		"partnerid":              "partner_id",
+		"partnername":            "partner_name",
+		"mpnid":                  "mpn_id",
+		"tier2mpnid":             "tier2_mpn_id",
+		"tier2mpn":               "tier2_mpn_id",
+		
+		// Customer fields
+		"customerid":             "customer_id",
+		"customername":           "customer_name",
+		"customerdomainname":     "customer_domain_name",
+		"customercountry":        "country",
+		"customerdomain":         "customer_domain_name",
+		
+		// Product fields
+		"productid":              "product_id",
+		"skuid":                  "sku_id",
+		"skuname":                "sku_name",
+		"productname":            "product_name",
+		"metertype":              "meter_type",
+		"metercategory":          "category",
+		"metersubcategory":       "sub_category",
+		"unit":                   "unit_type",
+		"unittype":               "unit_type",
+		"resourcelocation":       "resource_location",
+		"category":               "category",
+		"subcategory":            "sub_category",
+		
+		// Usage fields
+		"invoicenumber":          "invoice_number",
+		"usagedate":              "usage_date",
+		"chargestartdate":        "charge_start_date",
+		"unitprice":              "unit_price",
+		"effectiveunitprice":     "unit_price",
+		"quantity":               "quantity",
+		"billingpretaxtotal":     "billing_pre_tax_total",
+		"billingcurrency":        "billing_currency",
+		"pricingpretaxtotal":     "pricing_pre_tax_total",
+		"pricingcurrency":        "pricing_currency",
+		"benefittype":            "benefit_type",
+		"tags":                   "tags",
+		"additionalinfo":         "additional_info",
+		"serviceinfo1":           "service_info1",
+		"serviceinfo2":           "service_info2",
+		"pcbcexchangerate":       "pc_to_bc_exchange_rate",
+		"pcbcexchangeratedate":   "pc_to_bc_exchange_rate_date",
+		"entitlementid":          "entitlement_id",
+		"entitlementdescription": "entitlement_description",
+		"partnerearnedcreditpercentage": "partner_earned_credit_percentage",
+		"creditpercentage":       "credit_percentage",
+		"credittype":             "credit_type",
+		"benefitorderid":         "benefit_order_id",
+		"benefitid":              "benefit_id",
 	}
 
-	// Mapear colunas do cabeçalho para os nomes internos
 	for i, col := range header {
-		if mappedName, exists := fixedMapping[col]; exists {
-			columnMap[mappedName] = i
-			log.Printf("🔗 Coluna %d: '%s' -> '%s'", i, col, mappedName)
-		} else {
-			// Para colunas não mapeadas, usar o nome original
-			columnMap[col] = i
+		n := normalize(col)
+		key := n
+		if mapped, ok := alias[n]; ok {
+			key = mapped
 		}
+		columnMap[key] = i
+		log.Printf("🔗 Coluna %d: '%s' -> '%s'", i, col, key)
 	}
 
-	// Verificar colunas obrigatórias
+	// Verificar colunas obrigatórias com mapeamento flexível
 	requiredColumns := []string{"partner_id", "customer_id", "product_id", "usage_date", "quantity", "unit_price"}
 	missingColumns := []string{}
 	
+	// Mapear colunas disponíveis para colunas obrigatórias
+	columnMapping := make(map[string]string)
 	for _, required := range requiredColumns {
-		if _, exists := columnMap[required]; !exists {
+		found := false
+		for available, _ := range columnMap {
+			if strings.Contains(strings.ToLower(available), strings.ToLower(required)) {
+				columnMapping[required] = available
+				found = true
+				break
+			}
+		}
+		if !found {
 			missingColumns = append(missingColumns, required)
 		}
 	}
 	
 	if len(missingColumns) > 0 {
-		return nil, nil, nil, nil, fmt.Errorf("colunas obrigatórias não encontradas: %v. Verifique se o arquivo está no formato esperado.", missingColumns)
+		log.Printf("⚠️  Colunas obrigatórias não encontradas: %v", missingColumns)
+		log.Printf("📋 Colunas disponíveis: %v", getAvailableColumns(header))
+		log.Printf("🔍 Tentando mapeamento automático...")
+		
+		// Tentar mapeamento automático mais agressivo
+		for _, missing := range missingColumns {
+			for available, _ := range columnMap {
+				availableLower := strings.ToLower(strings.ReplaceAll(available, " ", ""))
+				missingLower := strings.ToLower(strings.ReplaceAll(missing, "_", ""))
+				
+				if strings.Contains(availableLower, missingLower) || 
+				   strings.Contains(missingLower, availableLower) ||
+				   (strings.Contains(availableLower, "partner") && strings.Contains(missingLower, "partner")) ||
+				   (strings.Contains(availableLower, "customer") && strings.Contains(missingLower, "customer")) ||
+				   (strings.Contains(availableLower, "product") && strings.Contains(missingLower, "product")) ||
+				   (strings.Contains(availableLower, "usage") && strings.Contains(missingLower, "usage")) ||
+				   (strings.Contains(availableLower, "date") && strings.Contains(missingLower, "date")) ||
+				   (strings.Contains(availableLower, "quantity") && strings.Contains(missingLower, "quantity")) ||
+				   (strings.Contains(availableLower, "price") && strings.Contains(missingLower, "price")) {
+					columnMapping[missing] = available
+					log.Printf("✅ Mapeamento automático: '%s' -> '%s'", available, missing)
+					break
+				}
+			}
+		}
+		
+		// Verificar se ainda há colunas faltando
+		stillMissing := []string{}
+		for _, required := range requiredColumns {
+			if _, exists := columnMapping[required]; !exists {
+				stillMissing = append(stillMissing, required)
+			}
+		}
+		
+		if len(stillMissing) > 0 {
+			return nil, nil, nil, nil, fmt.Errorf("colunas obrigatórias não encontradas: %v. Colunas disponíveis: %v", stillMissing, getAvailableColumns(header))
+		}
+	}
+	
+	// Atualizar columnMap com mapeamentos encontrados
+	for required, available := range columnMapping {
+		columnMap[required] = columnMap[available]
 	}
 
 	// Estruturas para processamento paralelo
@@ -533,11 +620,9 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 	}
 
 	billingPreTaxTotal, err := parseFloat(getValue("billing_pre_tax_total"))
-	if err != nil || billingPreTaxTotal == 0 {
-		// Se não conseguir parsear ou o valor for zero, calcular automaticamente
-		billingPreTaxTotal = quantity * unitPrice
-		log.Printf("📊 Calculando billing_pre_tax_total automaticamente na linha %d: %v = %v * %v", 
-			rowNum+1, billingPreTaxTotal, quantity, unitPrice)
+	if err != nil {
+		log.Printf("⚠️  Erro ao parsear billing_pre_tax_total na linha %d: %v, usando 0", rowNum+1, err)
+		billingPreTaxTotal = 0
 	}
 
 	// Criar Usage
@@ -551,13 +636,12 @@ func (h *UploadHandler) parseRow(record []string, columnMap map[string]int, rowN
 		ResourceLocation:   getValue("resource_location"),
 		Tags:               getValue("tags"),
 		BenefitType:        getValue("benefit_type"),
+		PartnerIDStr:       partner.PartnerID,    // Adicionado para mapeamento
+		CustomerIDStr:      customer.CustomerID,  // Adicionado para mapeamento
+		ProductIDStr:       product.ProductID,    // Adicionado para mapeamento
 		PartnerID:          0, 
 		CustomerID:         0, // Será preenchido após inserção
-		ProductID:          0,
-		// Adicionar os campos de string ID necessários para o mapeamento
-		PartnerIDStr:       partner.PartnerID,
-		CustomerIDStr:      customer.CustomerID,
-		ProductIDStr:       product.ProductID,
+		ProductID:          0, 
 	}
 
 	return partner, customer, product, usage, nil

@@ -145,15 +145,6 @@ func (s *Service) GetBillingByPartner(ctx context.Context) ([]models.BillingByPa
 	return reports, nil
 }
 
-// GetProductsByPartner retorna produtos por parceiro
-func (s *Service) GetProductsByPartner(ctx context.Context, partnerID string) ([]models.Product, error) {
-	products, err := s.repo.GetProductsByPartner(ctx, partnerID)
-	if err != nil {
-		return nil, fmt.Errorf("erro no service ao buscar produtos por parceiro: %w", err)
-	}
-	return products, nil
-}
-
 // ProcessImportData processa dados de importação com inserção em lote
 func (s *Service) ProcessImportData(ctx context.Context, partners []models.Partner, customers []models.Customer, products []models.Product, usages []models.Usage) error {
 	// Inserir partners individualmente para obter IDs
